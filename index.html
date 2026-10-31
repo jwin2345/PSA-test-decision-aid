@@ -586,8 +586,8 @@ function render(){
   $('tierPill').textContent='×'+r.condHR.toFixed(2);
   const v=$('verdict');
   if(psaOut){ v.className='verdict v-out'; $('vPill').textContent='Outside range'; $('vWhy').textContent='Evaluate the elevated PSA according to guidelines.'; }
-  else { const ph=[]; if(r.band.indexOf('cancer')>=0) ph.push("his metastatic risk is within the model's own uncertainty of the comparison man's"); if(r.band.indexOf('life')>=0) ph.push('his life expectancy is within '+((o.margin&&o.margin.leBand)||1.5)+' years of the threshold');
-    const band=ph.length?' This is close to the line — '+ph.join(' and ')+' — so a difference this small is not a finding.':'';
+  else { const ph=[]; if(r.band.indexOf('cancer')>=0) ph.push("within the model's uncertainty of the comparison"); if(r.band.indexOf('life')>=0) ph.push('within '+((o.margin&&o.margin.leBand)||1.5)+' years of the life-expectancy threshold');
+    const band=ph.length?' However, this result is '+ph.join(' and ')+', and therefore should be interpreted cautiously.':'';
     v.className='verdict v-'+r.cat+(r.border?' v-border':''); $('vPill').textContent=(r.border?'Borderline: ':'')+catText[r.cat];
     $('vWhy').textContent=why(r,o)+band+(r.condHR>6?' Several serious conditions are combined; their hazard ratios multiply, so this estimate is less certain.':''); }
   $('le').innerHTML=r.le.toFixed(1)+' <small>years</small>';
