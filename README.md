@@ -1,4 +1,4 @@
-# PSA Screening Decision Tool (research version)
+# PSA Screening Decision Tool (version 1.0)
 
 A calculator for men aged 65–84 who are already being screened. It estimates life expectancy and the risk of metastatic prostate cancer from TriNetX health-system data and the US life table, and indicates whether stopping PSA screening is reasonable.
 

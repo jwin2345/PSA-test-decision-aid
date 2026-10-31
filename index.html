@@ -149,7 +149,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
   <header class="mast">
     <div class="mast-top">
       <h1>PSA Screening Decision Tool</h1>
-      <span class="ver">Research version 0.22.2</span>
+      <span class="ver">Version 1.0</span>
     </div>
     <p class="sub">Estimates life expectancy and risk of metastatic prostate cancer for a man aged 65–84 who is already being screened, and indicates whether stopping PSA screening is reasonable.</p>
     <ul class="meta">
@@ -268,7 +268,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
         <a href="#m-data">Data source</a>
         <a href="#m-le">Life expectancy</a>
         <a href="#m-ca">Metastatic cancer risk</a>
-        <a href="#m-check">Checks and external comparison</a>
+        <a href="#m-check">Checks</a>
         <a href="#m-lim">Limitations</a>
         <a href="#m-ref">References</a>
       </nav>
@@ -292,7 +292,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
         <p>Average survival comes from the 2023 Social Security period life table for US men<sup class="r">5</sup>. Each patient's death hazard is expressed relative to that average and applied by the proportional-hazards identity:</p>
         <p class="eq">S(t) = [ l(age + t) / l(age) ] <sup>HR</sup> &nbsp;&nbsp; life expectancy = ∫ S(t) dt</p>
         <p>The hazard ratio has two parts. The baseline, for a man with none of the listed conditions, is the 10-year death rate of TriNetX men with none of them recorded divided (on the log scale) by that of all tested men in the same age band, about 0.5. Each condition then multiplies the hazard by its ratio from Cox models for death fitted separately in men aged 65–74 and 75–84 (21 conditions, mutually adjusted, PSA 1–3.99 ng/mL; 694,193 and 226,023 index tests), interpolated by age. The baseline is corrected for low albumin and BMI below 25, which could not be excluded from the condition-free cohorts. This approach follows published comorbidity-adjusted life tables<sup class="r">6</sup>.</p>
-        <p>Men who keep having PSA tests are healthier than the average man of their age<sup class="r">12</sup>, so the average tested man is not given the life-table death rate. Among men whose routine laboratory results (LDL cholesterol) were recorded in the network, 10-year death was 13.9% in PSA-tested men and 27.1% in never-tested men at age 67 (hazard ratio 0.43), and 35.3% and 50.5% at age 77 (hazard ratio 0.53). Scaled to the life table, PSA-tested men die at about 0.60 times the population rate at 67 and 0.66 times at 77 (0.56–0.63 and 0.62–0.70 depending on how many deaths the records miss). This factor is applied to every man, including the reference man, at his current age, linearly between 67 and 77 and flat outside; the condition hazard ratios then spread individual men around the average tested man. It assumes the advantage of tested over untested men is the same for every comorbidity.</p>
+        <p>Men who keep having PSA tests are healthier than the average man of their age<sup class="r">11</sup>, so the average tested man is not given the life-table death rate. Among men whose routine laboratory results (LDL cholesterol) were recorded in the network, 10-year death was 13.9% in PSA-tested men and 27.1% in never-tested men at age 67 (hazard ratio 0.43), and 35.3% and 50.5% at age 77 (hazard ratio 0.53). Scaled to the life table, PSA-tested men die at about 0.60 times the population rate at 67 and 0.66 times at 77 (0.56–0.63 and 0.62–0.70 depending on how many deaths the records miss). This factor is applied to every man, including the reference man, at his current age, linearly between 67 and 77 and flat outside; the condition hazard ratios then spread individual men around the average tested man. It assumes the advantage of tested over untested men is the same for every comorbidity.</p>
         <div class="mtable"><table>
           <thead><tr><th>Condition</th><th>HR at 70</th><th>HR at 80</th></tr></thead>
           <tbody>
@@ -318,21 +318,19 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
         <p>Comorbidities act only through survival; in a Cox model for ARPI start in men 65–84 they did not change the rate. The within-band PSA correction was measured for ARPI start and is assumed to apply to metastatic disease. Family history, race, prior biopsy and other prostate cancer risk factors are not inputs: their hazard ratios were available only for ARPI start.</p>
         <p>The estimated chance of dying of prostate cancer weights each metastatic diagnosis by the share of men with a first metastatic code who die of the disease: 1 minus their 10-year survival relative to the life table, 35% when the first metastasis is at 65–74 (45,861 men) and 29% at 75–84 (31,167 men), excluding men with 11 common other cancers. It is shown for context and does not enter the recommendation.</p>
 
-        <h3 id="m-check">Checks and external comparison</h3>
+        <h3 id="m-check">Checks</h3>
         <ul>
           <li><b>Death-model calibration.</b> In 13 cohorts of men with specified conditions at ages 70–79, chosen before outcomes were seen, the calibration slope for predicted against observed 10-year death was 0.87 (95% CI, 0.79–0.96), fitted through the origin, and observed/expected deaths were 0.95 (95% CI, 0.93–0.98). These cohorts also informed model development, so this is not an independent validation.</li>
           <li><b>Metastatic disease in men with comorbidities.</b> In the same cohorts, coded metastatic prostate cancer was 0.72 times (95% CI, 0.67–0.78) the rate expected relative to men with no conditions, so the tool may overstate cancer risk in men with comorbidities by about a quarter (fewer diagnoses may also reflect less investigation). Applying this factor changes 443 of 4,680 example recommendations, all toward stopping.</li>
-          <li><b>PSA effect at older ages.</b> The within-band PSA correction measured at age 72 was tested in advance at age 77 in three narrow bands (10-year ARPI start), with the rule that all three 95% CIs must contain the prediction. Two did (PSA 0.5–0.99: predicted 0.33%, observed 0.43%; PSA 3–3.99: 1.35% vs 1.38%) and one did not (PSA 1.5–1.99: predicted 0.71%, observed 0.44%, 95% CI 0.27–0.69%, 28 events). The uncorrected prediction also missed, so the failure is not caused by the correction, and at 5 years the three bands are in the expected order.</li>
           <li><b>Outcome definition.</b> Using first ARPI prescription as the outcome instead of coded metastatic disease changes 245 of 4,680 example recommendations (ages 65–84 × 9 PSA values × 26 health patterns), all toward continuing.</li>
           <li><b>Comparison with an age-70 cutoff.</b> Across the same 4,680 examples the tool and a rule of screening to 70 disagree in 22.7%: 40.0% of examples under 70 would be told they can stop, and 17.0% of examples aged 70 or older would be told to continue.</li>
           <li><b>Other cancers in the metastatic definition.</b> In the reference man's cohort and at index ages 67, 72 and 77 (PSA below 1), men with no other primary cancer code had 36% to 50% of the coded metastatic rate (pooled 44%), so more than half of coded metastatic prostate cancer occurs in men who also have another cancer. The pooled factor is applied (see Metastatic cancer risk); applying age-specific factors instead moves the first stopping age by up to 2.6 years, within their confidence intervals.</li>
-          <li><b>Comparison with CISNET.</b> For PSA-tested men, estimated life expectancy falls below 15 years at age 80.5 with no comorbidities, 77.5 with diabetes, 75.0 with COPD and 71.2 with heart failure and COPD, 4 to 9 years later than the comorbidity-specific screening cessation ages from CISNET models (76, 72, 66 and 66)<sup class="r">11</sup>, which use population survival. Without the tested-men correction the ages are 75.7, 73.3, 70.6 and 66.7. The criteria differ, so this is a comparison rather than a validation.</li>
         </ul>
 
         <h3 id="m-lim">Limitations</h3>
         <ul>
           <li>Built from aggregate data. Individual-level calibration, discrimination and decision-curve analysis are still needed.</li>
-          <li>The tested-men survival factor was measured at two ages, in men with recorded laboratory results, and depends on how completely deaths are recorded; it is assumed to be the same for every comorbidity. Deaths missing from health-record data could also bias the condition hazard ratios in either direction<sup class="r">13</sup>.</li>
+          <li>The tested-men survival factor was measured at two ages, in men with recorded laboratory results, and depends on how completely deaths are recorded; it is assumed to be the same for every comorbidity. Deaths missing from health-record data could also bias the condition hazard ratios in either direction<sup class="r">12</sup>.</li>
           <li>Hazard ratios were measured over 10 years of follow-up and are applied for life. Combined hazard ratios for many conditions are multiplied without interaction terms.</li>
           <li>Metastatic disease is identified from diagnosis codes, which are incomplete and can be dated late. The correction for other cancers (0.44) also removes some true prostate metastases in men with a second cancer, so it may understate risk. After correction the reference man reaches 1.5% by age 85, against 0.5% reported for similar men in Malmö<sup class="r">4</sup>; lymph-node codes at surgery and differences in era and imaging may account for the rest. Because the same definition applies to the patient and the reference man, the comparison is less affected than the displayed level. The metastatic rate is derived from ARPI timing scaled by each cohort's count ratio, not yet measured directly over person-time.</li>
           <li>Men with comorbidities had fewer recorded metastatic diagnoses than predicted (see Checks); the tool does not adjust for this.</li>
@@ -352,7 +350,6 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
           <li>Hanley JA. J Med Screen. 2010;17:147.</li>
           <li>Buzzoni C, Auvinen A, Roobol MJ, et al. Metastatic prostate cancer incidence and prostate-specific antigen testing: new insights from the European Randomized Study of Screening for Prostate Cancer. Eur Urol. 2015;68(5):885–90.</li>
           <li>Finne P, et al. Eur J Cancer. 2010;46:3102.</li>
-          <li>Lansdorp-Vogelaar I, Gulati R, Mariotto AB, et al. Personalizing age of cancer screening cessation based on comorbid conditions: model estimates of harms and benefits. Ann Intern Med. 2014;161(2):104–12.</li>
           <li>Goodwin JS, Sheffield K, Li S, Tan A. Receipt of cancer screening is a predictor of life expectancy. J Gen Intern Med. 2016;31(11):1308–14.</li>
           <li>Walter LC, Bertenthal D, Lindquist K, Konety BR. PSA screening among elderly men with limited life expectancies. JAMA. 2006;296(19):2336–42.</li>
         </ol>
@@ -361,7 +358,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
     </details>
   </section>
 
-  <footer><span>PSA Screening Decision Tool · research version 0.22.2 · model of 28 October 2026</span><span>Estimates only; not a substitute for clinical judgment.</span></footer>
+  <footer><span>PSA Screening Decision Tool · version 1.0 · October 2026</span><span>Estimates only; not a substitute for clinical judgment.</span></footer>
 </div>
 
 <script>
