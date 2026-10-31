@@ -1,0 +1,678 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PSA Screening Decision Tool</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,650&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: clinical worksheet. Masthead, then inputs (left) beside result + two component readouts + trajectory map (right); full-width methods below. Stacks on phones. */
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#1b2331; --muted:#5b6677; --line:#d8dde5; --soft:#eef1f5;
+  --accent:#24477a; --accent-soft:#e2e9f4;
+  --go:#2b7656; --go-soft:#e1f0e8; --stop:#55617a; --stop-soft:#e6e9ef;
+  --warn-bg:#fdf3dc; --warn-ink:#6a4a0d;
+  --f-display:"Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-body:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151c; --panel:#192029; --ink:#e3e7ed; --muted:#99a4b4; --line:#2d3543; --soft:#212934;
+  --accent:#8fb0e6; --accent-soft:#213048;
+  --go:#6cc49a; --go-soft:#1b3227; --stop:#a9b4c8; --stop-soft:#252c39;
+  --warn-bg:#382e14; --warn-ink:#f2d58f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151c; --panel:#192029; --ink:#e3e7ed; --muted:#99a4b4; --line:#2d3543; --soft:#212934;
+  --accent:#8fb0e6; --accent-soft:#213048;
+  --go:#6cc49a; --go-soft:#1b3227; --stop:#a9b4c8; --stop-soft:#252c39;
+  --warn-bg:#382e14; --warn-ink:#f2d58f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-block:22px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+/* masthead */
+.mast{display:grid;gap:10px;border-bottom:1px solid var(--line);padding-bottom:16px}
+.mast-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px}
+h1{font-family:var(--f-display);font-weight:650;font-size:clamp(26px,3.4vw,34px);line-height:1.12;margin:0;letter-spacing:-.005em;text-wrap:balance}
+.ver{font-family:var(--f-mono);font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.sub{color:var(--ink);margin:0;max-width:78ch;font-size:15.5px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--muted);margin:0;padding:0;list-style:none}
+.meta b{color:var(--ink);font-weight:600}
+.status{display:flex;gap:10px;align-items:flex-start;background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:9px 12px;font-size:13.5px}
+.status b{font-weight:600}
+.status svg{flex:none;margin-top:2px}
+/* worksheet */
+.grid{display:grid;grid-template-columns:minmax(280px,370px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:16px;min-width:0}
+h2{font-family:var(--f-display);font-weight:650;font-size:18px;margin:0}
+.lbl{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.sec{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.sec:first-of-type{border-top:none;padding-top:0}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.field{display:grid;gap:6px}
+.row{display:flex;gap:10px;align-items:center}
+input[type=range]{flex:1;accent-color:var(--accent);min-width:0}
+input[type=number]{width:84px;font-family:var(--f-mono);font-size:15px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+input:focus-visible,button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.unit{color:var(--muted);font-size:13px}
+.checks{display:grid;gap:2px}
+.checks label{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer;padding:3px 0;width:100%}
+.checks input{margin-top:3px;accent-color:var(--accent)}
+.group-h{font-size:12.5px;font-weight:600;color:var(--muted);margin-top:6px}
+.hrchip{margin-left:auto;font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.custom{display:grid;gap:6px;border-top:1px dashed var(--line);padding-top:10px}
+.row.wrap{flex-wrap:wrap}
+#cName{flex:1;min-width:120px;font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+#cImpact{font:inherit;font-size:13.5px;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+button.rm{font:inherit;border:none;background:none;color:var(--muted);cursor:pointer;padding:0 4px;font-size:16px;line-height:1}
+.hz-sum{font-size:13.5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between;background:var(--soft);border-radius:8px;padding:8px 10px}
+.tier{font-family:var(--f-mono);font-size:14px;font-weight:500}
+.presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.presets .lbl{margin-right:2px}
+button.preset{font:inherit;font-size:13px;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer}
+button.preset:hover{border-color:var(--accent)}
+.out-head{display:flex;justify-content:space-between;align-items:center;gap:10px 16px;flex-wrap:wrap;margin-bottom:12px}
+.out-head h2{margin:0}
+.seg{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px 0;font-size:13px}
+.seg-l{color:var(--muted);margin-right:8px}
+.seg-bs{display:inline-flex;white-space:nowrap}
+.seg-b{font:inherit;padding:5px 10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;margin-left:-1px}
+.seg-b:first-of-type{border-radius:6px 0 0 6px;margin-left:0}
+.seg-b:last-of-type{border-radius:0 6px 6px 0}
+.seg-b.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+/* result */
+.verdict{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;border-radius:10px;padding:14px 16px;border:1px solid var(--line)}
+@media (max-width:520px){.verdict{grid-template-columns:minmax(0,1fr)}}
+.verdict .pill{font-family:var(--f-display);font-weight:650;font-size:24px;padding:4px 14px;border-radius:8px;white-space:nowrap}
+.v-continue{background:var(--go-soft)} .v-continue .pill{color:var(--go)}
+.v-stop{background:var(--stop-soft)} .v-stop .pill{color:var(--stop)}
+.v-out{background:var(--soft)} .v-out .pill{color:var(--muted);font-size:18px}
+.verdict.v-border{border:2px dashed var(--accent)}
+.v-border .pill{font-size:18px}
+.why{font-size:14.5px;margin:0}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.cards > .panel{align-content:start;padding:14px}
+@media (max-width:560px){.cards{grid-template-columns:minmax(0,1fr)}}
+.card-h{display:grid;gap:3px}
+.card-h h3{font-family:var(--f-body);font-size:14px;font-weight:600;margin:0}
+.big{font-family:var(--f-mono);font-size:30px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.1}
+.big small{font-size:13.5px;color:var(--muted);font-family:var(--f-body)}
+.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;font-size:13.5px;margin:0}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.level{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;justify-self:start}
+.lv-short,.lv-low{background:var(--stop-soft);color:var(--stop)}
+.lv-sufficient,.lv-above{background:var(--go-soft);color:var(--go)}
+.gauge{display:block;margin-top:2px}
+.chartbox{overflow-x:auto}
+svg text{fill:var(--muted);font-family:var(--f-body);font-size:11px}
+svg .axis{stroke:var(--line)} svg .tick{stroke:var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--muted)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+div.set{border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font-weight:600;font-size:14px}
+.thr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;font-size:13.5px;margin-top:10px}
+.note{font-size:12.5px;color:var(--muted);margin:0}
+.oor{font-size:13px;color:var(--warn-ink);background:var(--warn-bg);border-radius:6px;padding:6px 9px}
+@media (prefers-reduced-motion:no-preference){.dot{transition:cx .15s,cy .15s}}
+/* methods */
+.methods{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px clamp(16px,3vw,32px);display:grid;gap:6px}
+.methods-grid{display:grid;grid-template-columns:200px minmax(0,1fr);gap:0 32px}
+@media (max-width:760px){.methods-grid{grid-template-columns:minmax(0,1fr)}}
+.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);align-self:start;display:grid;gap:4px;font-size:13.5px;padding-top:6px}
+@media (max-width:760px){.toc{position:static;display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:8px}}
+.toc a{color:var(--muted);text-decoration:none}
+.toc a:hover{color:var(--accent);text-decoration:underline}
+.mtext{max-width:76ch;min-width:0}
+.mtext h3{font-family:var(--f-display);font-weight:650;font-size:18px;margin:22px 0 6px}
+.mtext h3:first-child{margin-top:4px}
+.mtext p,.mtext li{font-size:14.5px;line-height:1.6}
+.mtext p{margin:0 0 10px}
+.mtext ul{margin:0 0 10px;padding-left:20px;display:grid;gap:4px}
+.mtext .eq{font-family:var(--f-mono);font-size:13.5px;background:var(--soft);border-radius:6px;padding:8px 10px;overflow-x:auto;white-space:nowrap}
+.mtable{overflow-x:auto;margin:4px 0 12px}
+.mtable table{border-collapse:collapse;font-size:13.5px;min-width:420px;width:100%}
+.mtable th,.mtable td{text-align:left;padding:6px 10px 6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.mtable th{font-weight:600;color:var(--muted);font-size:12.5px}
+.mtable td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+sup.r{font-size:11px;color:var(--accent)}
+.refs{font-size:13px;color:var(--muted);padding-left:22px;display:grid;gap:4px}
+.refs li{font-size:13px;line-height:1.5}
+.mdet>summary{display:flex;align-items:baseline;gap:14px;cursor:pointer;list-style:none}
+.mdet>summary::-webkit-details-marker{display:none}
+.mdet>summary h2{margin:0}
+.mhint{font-size:13px;color:var(--accent)}
+.mhint::after{content:" \25BE"}
+.mdet[open] .mhint::after{content:" \25B4"}
+.mdet[open]>summary{margin-bottom:14px}
+footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="mast-top">
+      <h1>PSA Screening Decision Tool</h1>
+      <span class="ver">Research version 0.22.2</span>
+    </div>
+    <p class="sub">Estimates life expectancy and risk of metastatic prostate cancer for a man aged 65–84 who is already being screened, and indicates whether stopping PSA screening is reasonable.</p>
+    <ul class="meta">
+      <li><b>Inclusion criteria:</b> men 65–84, PSA below 4 ng/mL, at least one prior PSA, no prostate cancer diagnosis</li>
+      <li><b>Exclusion criteria:</b> symptoms, abnormal DRE, PSA 4 ng/mL or higher</li>
+      <li><b>Built from:</b> TriNetX health-system records and the US life table</li>
+    </ul>
+    <div class="status" role="note"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="7.25" y="4" width="1.5" height="5.5" rx=".7" fill="currentColor"/><circle cx="8" cy="11.6" r=".95" fill="currentColor"/></svg><span><b>Research use only.</b> This tool has not yet been validated in individual patient data and should not be the sole basis for a screening decision. Use it to support shared decision-making.</span></div>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="in-h">
+      <h2 id="in-h">Patient</h2>
+      <div class="presets" aria-label="Example patients">
+        <span class="lbl">Examples</span>
+        <button class="preset" data-p="h72">72 y, PSA 1.8, no conditions</button>
+        <button class="preset" data-p="f72">72 y, PSA 1.8, HF + COPD + AF + CAD</button>
+        <button class="preset" data-p="m74">74 y, PSA 2.4, diabetes</button>
+      </div>
+
+      <div class="sec">
+        <div class="field">
+          <label class="lbl" for="age">Age</label>
+          <div class="row"><input type="range" id="ageR" min="65" max="84.9" step="0.1" aria-label="Age slider"><input type="number" id="age" min="65" max="84.9" step="0.1"><span class="unit">years</span></div>
+        </div>
+        <div class="field">
+          <label class="lbl" for="psa">Most recent PSA</label>
+          <div class="row"><input type="range" id="psaR" min="0.1" max="3.99" step="0.01" aria-label="PSA slider"><input type="number" id="psa" min="0" max="20" step="0.01"><span class="unit">ng/mL</span></div>
+          <div id="psaNote" class="oor" hidden></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><span class="lbl">Comorbidities</span><span class="note">Hazard ratio for death at this age</span></div>
+        <p class="note">Select every condition documented in the chart, current or past. Hazard ratios are mutually adjusted, so each one applies on top of the others.</p>
+        <div class="checks" id="checks"></div>
+        <div class="custom">
+          <div class="group-h">Condition not listed</div>
+          <div class="row wrap">
+            <input type="text" id="cName" placeholder="Condition name" aria-label="Condition name" maxlength="40">
+            <select id="cImpact" aria-label="Expected effect on mortality">
+              <option value="low">Mild effect ×1.15</option>
+              <option value="med" selected>Moderate effect ×1.40</option>
+              <option value="high">Severe effect ×1.90</option>
+            </select>
+            <button type="button" class="preset" id="cAdd">Add</button>
+          </div>
+          <div id="cList" class="checks"></div>
+          <p class="note">Mild is comparable to stroke or BMI under 25; moderate to diabetes or tobacco dependence; severe to COPD, dementia or Parkinson disease.</p>
+        </div>
+        <div class="hz-sum"><span>Combined comorbidity hazard ratio</span><span class="tier" id="tierPill">×1.00</span></div>
+      </div>
+
+    </section>
+
+    <section class="panel" aria-labelledby="out-h">
+      <div class="out-head"><h2 id="out-h">Result</h2>
+        <div class="seg" role="group" aria-label="Life-expectancy threshold"><span class="seg-l">Life-expectancy threshold</span><span class="seg-bs"><button type="button" class="seg-b on" data-le="15" aria-pressed="true">15 y (EAU)</button><button type="button" class="seg-b" data-le="10" aria-pressed="false">10 y (ACS/NCCN)</button></span></div>
+      </div>
+      <div class="verdict" id="verdict" aria-live="polite"><span class="pill" id="vPill">—</span><p class="why" id="vWhy"></p></div>
+
+      <div class="cards">
+        <div class="panel">
+          <div class="card-h"><span class="lbl">Life expectancy</span><h3>Estimated remaining years of life</h3></div>
+          <div class="big" id="le">—</div>
+          <span class="level" id="leLevel">—</span>
+          <svg class="gauge" id="leGauge" viewBox="0 0 320 58" width="100%" role="img" aria-label="Life expectancy scale with screening threshold"></svg>
+          <dl class="kv">
+            <dt>Probability of death within 10 years</dt><dd id="d10">—</dd>
+            <dt>Death hazard vs. US life table</dt><dd id="hr">—</dd>
+            <dt>Average PSA-tested man his age</dt><dd id="ltle">—</dd>
+          </dl>
+        </div>
+        <div class="panel">
+          <div class="card-h"><span class="lbl">Metastatic cancer risk</span><h3>Compared with a low-risk reference man, beyond a <span id="lagN">4</span>-year lead time</h3></div>
+          <div class="big" id="xref">—</div>
+          <span class="level" id="cLevel">—</span>
+          <svg class="gauge" id="cGauge" viewBox="0 0 320 58" width="100%" role="img" aria-label="Metastatic risk relative to the low-risk reference man"></svg>
+          <dl class="kv">
+            <dt>Estimated lifetime risk, approximate</dt><dd id="r85">—</dd>
+            <dt>Reference man's lifetime risk, approximate</dt><dd id="refabs">—</dd>
+            <dt>Estimated prostate cancer death, approximate</dt><dd id="rfat">—</dd>
+          </dl>
+          <p class="note">Absolute risks come from coded diagnoses and are approximate; the comparison with the reference man is the more reliable figure (see Methods).</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="lbl" style="margin-bottom:6px">Both estimates together, and how they change as he ages</div>
+        <div class="chartbox"><svg id="map" viewBox="0 0 640 360" width="100%" role="img" aria-label="Life expectancy plotted against metastatic risk relative to the low-risk reference, with continue and stop regions"></svg></div>
+        <div class="legend">
+          <span><i class="sw" style="background:var(--go-soft);border:1px solid var(--go)"></i>Continue screening</span>
+          <span><i class="sw" style="background:var(--stop-soft);border:1px solid var(--stop)"></i>Consider stopping</span>
+          <span>● this patient · solid line: same patient at ages 65–84</span>
+        </div>
+      </div>
+
+      <div class="set">
+        <div class="lbl">Thresholds</div>
+        <div class="thr">
+          <label for="tLe">Life-expectancy threshold</label><span><input type="number" id="tLe" min="10" max="15" step="0.5" value="15"> y</span>
+          <label for="tLag">Lead time (metastases within this period are not counted)</label><span><input type="number" id="tLag" min="0" max="10" step="1" value="4"> y</span>
+        </div>
+        <p class="note" style="margin-top:8px">Defaults: 15 years (EAU 2026, strong recommendation) and a 4-year lead time. A 10-year threshold, the American Cancer Society and NCCN position, is the sensitivity analysis; it can also be switched at the top of the result. See Methods.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="methods" id="methods" aria-labelledby="m-h">
+    <details class="mdet" id="mdet">
+    <summary><h2 id="m-h" style="font-size:22px">Methods</h2><span class="mhint">Show detailed methods</span></summary>
+    <div class="methods-grid">
+      <nav class="toc" aria-label="Methods sections">
+        <a href="#m-use">Intended use</a>
+        <a href="#m-rule">Decision rule</a>
+        <a href="#m-data">Data source</a>
+        <a href="#m-le">Life expectancy</a>
+        <a href="#m-ca">Metastatic cancer risk</a>
+        <a href="#m-check">Checks and external comparison</a>
+        <a href="#m-lim">Limitations</a>
+        <a href="#m-ref">References</a>
+      </nav>
+      <div class="mtext">
+        <h3 id="m-use">Intended use</h3>
+        <p>The tool is for men aged 65 to 84 who are already in a PSA screening pattern: at least one earlier PSA, a current PSA below 4 ng/mL, and no diagnosis of prostate cancer. It is not for men with urinary or bone symptoms, an abnormal digital rectal examination, or a PSA of 4 ng/mL or higher, who need diagnostic evaluation rather than a screening decision. Its output is meant to inform a shared decision; it does not replace clinical judgment or patient preference.</p>
+
+        <h3 id="m-rule">Decision rule</h3>
+        <p>Guidelines tie stopping screening to age (USPSTF: 70) or to life expectancy. The tool estimates the two quantities that age stands in for and applies two tests.</p>
+        <ul>
+          <li><b>Life expectancy.</b> Consider stopping if estimated life expectancy is below 15 years. The European Association of Urology gives a strong recommendation that men with less than 15 years are unlikely to benefit from early diagnosis<sup class="r">1</sup>. The threshold can be lowered to 10 years, the American Cancer Society and NCCN position<sup class="r">2</sup>. The current AUA/SUO guideline lists life expectancy as one factor in shared decision-making without a numeric threshold<sup class="r">3</sup>.</li>
+          <li><b>Metastatic cancer risk.</b> Consider stopping if his lifetime risk of metastatic prostate cancer beyond a 4-year lead time is no higher than that of a low-risk reference man: a 60-year-old with PSA below 1 ng/mL, the group the Malmö cohort identified as able to stop or test rarely<sup class="r">4</sup>. The reference man is given the patient's own comorbidity, so the comparison reflects cancer risk at equal health; life expectancy is judged by the first test alone.</li>
+        </ul>
+        <p>Both comparisons sometimes land close to their thresholds, and the tool says so rather than printing a bare verdict. A result is marked borderline when the criterion that decided it sits inside the model's own uncertainty: for the cancer comparison, a gap to the reference man smaller than the model's own 95% uncertainty for that comparison (about a factor of 1.37 either way, from 1,000 simulations that vary every measured input); for life expectancy, within 1.5 years of the threshold. The recommendation itself does not change; the label is there because a difference that small is not a finding.</p>
+        <p>Otherwise the result is to continue screening. A PSA of 4 ng/mL or higher is outside the tool's range.</p>
+
+        <h3 id="m-data">Data source</h3>
+        <p>All inputs come from the TriNetX research network: electronic health records from about 125 health-care organizations, mostly US academic systems, accessed as aggregate counts, survival curves and model coefficients only (no patient-level data). Each cohort was defined as men with a PSA in the target age and value range, an earlier PSA at least 6 months before, no prior prostate cancer diagnosis or recorded treatment for it, and a health-system visit at least 1 year before the index PSA. Analyses were run in October 2026.</p>
+
+        <h3 id="m-le">Life expectancy</h3>
+        <p>Average survival comes from the 2023 Social Security period life table for US men<sup class="r">5</sup>. Each patient's death hazard is expressed relative to that average and applied by the proportional-hazards identity:</p>
+        <p class="eq">S(t) = [ l(age + t) / l(age) ] <sup>HR</sup> &nbsp;&nbsp; life expectancy = ∫ S(t) dt</p>
+        <p>The hazard ratio has two parts. The baseline, for a man with none of the listed conditions, is the 10-year death rate of TriNetX men with none of them recorded divided (on the log scale) by that of all tested men in the same age band, about 0.5. Each condition then multiplies the hazard by its ratio from Cox models for death fitted separately in men aged 65–74 and 75–84 (21 conditions, mutually adjusted, PSA 1–3.99 ng/mL; 694,193 and 226,023 index tests), interpolated by age. The baseline is corrected for low albumin and BMI below 25, which could not be excluded from the condition-free cohorts. This approach follows published comorbidity-adjusted life tables<sup class="r">6</sup>.</p>
+        <p>Men who keep having PSA tests are healthier than the average man of their age<sup class="r">12</sup>, so the average tested man is not given the life-table death rate. Among men whose routine laboratory results (LDL cholesterol) were recorded in the network, 10-year death was 13.9% in PSA-tested men and 27.1% in never-tested men at age 67 (hazard ratio 0.43), and 35.3% and 50.5% at age 77 (hazard ratio 0.53). Scaled to the life table, PSA-tested men die at about 0.60 times the population rate at 67 and 0.66 times at 77 (0.56–0.63 and 0.62–0.70 depending on how many deaths the records miss). This factor is applied to every man, including the reference man, at his current age, linearly between 67 and 77 and flat outside; the condition hazard ratios then spread individual men around the average tested man. It assumes the advantage of tested over untested men is the same for every comorbidity.</p>
+        <div class="mtable"><table>
+          <thead><tr><th>Condition</th><th>HR at 70</th><th>HR at 80</th></tr></thead>
+          <tbody>
+            <tr><td>ESRD or dialysis (includes CKD)</td><td class="n">2.72</td><td class="n">2.28</td></tr>
+            <tr><td>Parkinson disease</td><td class="n">2.38</td><td class="n">2.29</td></tr>
+            <tr><td>Metastatic cancer (non-prostate)</td><td class="n">2.02</td><td class="n">1.71</td></tr>
+            <tr><td>Dementia</td><td class="n">1.76</td><td class="n">1.86</td></tr>
+            <tr><td>COPD</td><td class="n">1.74</td><td class="n">1.60</td></tr>
+            <tr><td>Heart failure</td><td class="n">1.50</td><td class="n">1.50</td></tr>
+            <tr><td>Chronic kidney disease</td><td class="n">1.37</td><td class="n">1.29</td></tr>
+            <tr><td>Type 2 diabetes mellitus</td><td class="n">1.30</td><td class="n">1.26</td></tr>
+            <tr><td>Atrial fibrillation or flutter</td><td class="n">1.18</td><td class="n">1.22</td></tr>
+            <tr><td>Coronary artery disease</td><td class="n">1.12</td><td class="n">1.09</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note" style="margin-bottom:10px">Selected conditions; the full set is shown next to each checkbox for the patient's age.</p>
+
+        <h3 id="m-ca">Metastatic cancer risk</h3>
+        <p>The calculator shows metastatic risk mainly as a ratio to the low-risk reference man. Absolute lifetime risks are shown as approximate values, because they rest on coded diagnoses and the corrections described below, whereas the same definition applies to the patient and the reference man and largely cancels from the ratio.</p>
+        <p>The cancer outcome is a first recorded diagnosis of metastatic prostate cancer: a prostate cancer code (ICD-10 C61) together with a code for secondary malignancy of lymph nodes, respiratory or digestive organs, bone or other sites, or a secondary neuroendocrine tumor (C77, C78, C79 or C7B), both after the index PSA. Metastasis codes alone are not used, because in these cohorts nearly 90% of new metastasis codes were in men without a prostate cancer code.</p>
+        <p>The yearly rates come from 12 competing-risks cohorts (index PSA at age 67, 72, 77 or 81–82 × PSA below 1, 1–1.99 and 2–3.99 ng/mL), with follow-up to about 19 years at 67 and 9 years at 81–82, refined within bands by six narrow PSA bands (0.5–0.99 up to 3–3.99 ng/mL) indexed at age 72 in the same way. In these cohorts, and for the reference man (index PSA at age 60), men are excluded if prostate cancer, a personal history of it, prostatectomy, prostate radiation or brachytherapy, or androgen-deprivation drugs were coded at or before the index age. The competing-risks analyses give the year-by-year timing of a first androgen-receptor pathway inhibitor (ARPI) prescription, a marker of advanced disease. Each cohort's yearly ARPI rate is converted to a metastatic rate by that cohort's own ratio of men with coded metastatic prostate cancer to men starting an ARPI (1.5 to 2.7 across the twelve cohorts; 2.8 for the reference man; 3,837 against 1,642 overall). Both counts come from the same men over the same follow-up, so loss to follow-up affects them equally and cancels from the ratio. Every rate is then multiplied by 0.44, the share of coded metastatic prostate cancer that remains when men with any other primary cancer are excluded (measured against the same exclusion in the cohort denominator: 0.50 for the reference man and 0.44, 0.36 and 0.43 at index ages 67, 72 and 77, with no trend by age). Because the same factor applies to the patient and the reference man, it sets the displayed level and does not change the recommendation. The model assumes that metastatic diagnoses follow the same timing as ARPI starts within each cohort; a direct person-time estimate of the metastatic rate is in progress.</p>
+        <p>These rates are applied year by year against the patient's own survival from the life-expectancy estimate<sup class="r">7</sup>, so a man likely to die sooner accumulates less risk. Metastases within the next 4 years are not counted, because a cancer that will surface that soon is unlikely to be changed by a test today; the 4 years reflect the delay before the screening benefit in ERSPC<sup class="r">8–10</sup>. Beyond each cohort's follow-up, the rate is taken from the next older cohort at the same attained age (a 67-year-old's year 20 uses the 72-year-old cohort's year 15); the oldest cohort, with none older, carries forward the average of its last 3 measured years.</p>
+        <p>Comorbidities act only through survival; in a Cox model for ARPI start in men 65–84 they did not change the rate. The within-band PSA correction was measured for ARPI start and is assumed to apply to metastatic disease. Family history, race, prior biopsy and other prostate cancer risk factors are not inputs: their hazard ratios were available only for ARPI start.</p>
+        <p>The estimated chance of dying of prostate cancer weights each metastatic diagnosis by the share of men with a first metastatic code who die of the disease: 1 minus their 10-year survival relative to the life table, 35% when the first metastasis is at 65–74 (45,861 men) and 29% at 75–84 (31,167 men), excluding men with 11 common other cancers. It is shown for context and does not enter the recommendation.</p>
+
+        <h3 id="m-check">Checks and external comparison</h3>
+        <ul>
+          <li><b>Death-model calibration.</b> In 13 cohorts of men with specified conditions at ages 70–79, chosen before outcomes were seen, the calibration slope for predicted against observed 10-year death was 0.87 (95% CI, 0.79–0.96), fitted through the origin, and observed/expected deaths were 0.95 (95% CI, 0.93–0.98). These cohorts also informed model development, so this is not an independent validation.</li>
+          <li><b>Metastatic disease in men with comorbidities.</b> In the same cohorts, coded metastatic prostate cancer was 0.72 times (95% CI, 0.67–0.78) the rate expected relative to men with no conditions, so the tool may overstate cancer risk in men with comorbidities by about a quarter (fewer diagnoses may also reflect less investigation). Applying this factor changes 443 of 4,680 example recommendations, all toward stopping.</li>
+          <li><b>PSA effect at older ages.</b> The within-band PSA correction measured at age 72 was tested in advance at age 77 in three narrow bands (10-year ARPI start), with the rule that all three 95% CIs must contain the prediction. Two did (PSA 0.5–0.99: predicted 0.33%, observed 0.43%; PSA 3–3.99: 1.35% vs 1.38%) and one did not (PSA 1.5–1.99: predicted 0.71%, observed 0.44%, 95% CI 0.27–0.69%, 28 events). The uncorrected prediction also missed, so the failure is not caused by the correction, and at 5 years the three bands are in the expected order.</li>
+          <li><b>Outcome definition.</b> Using first ARPI prescription as the outcome instead of coded metastatic disease changes 245 of 4,680 example recommendations (ages 65–84 × 9 PSA values × 26 health patterns), all toward continuing.</li>
+          <li><b>Comparison with an age-70 cutoff.</b> Across the same 4,680 examples the tool and a rule of screening to 70 disagree in 22.7%: 40.0% of examples under 70 would be told they can stop, and 17.0% of examples aged 70 or older would be told to continue.</li>
+          <li><b>Other cancers in the metastatic definition.</b> In the reference man's cohort and at index ages 67, 72 and 77 (PSA below 1), men with no other primary cancer code had 36% to 50% of the coded metastatic rate (pooled 44%), so more than half of coded metastatic prostate cancer occurs in men who also have another cancer. The pooled factor is applied (see Metastatic cancer risk); applying age-specific factors instead moves the first stopping age by up to 2.6 years, within their confidence intervals.</li>
+          <li><b>Comparison with CISNET.</b> For PSA-tested men, estimated life expectancy falls below 15 years at age 80.5 with no comorbidities, 77.5 with diabetes, 75.0 with COPD and 71.2 with heart failure and COPD, 4 to 9 years later than the comorbidity-specific screening cessation ages from CISNET models (76, 72, 66 and 66)<sup class="r">11</sup>, which use population survival. Without the tested-men correction the ages are 75.7, 73.3, 70.6 and 66.7. The criteria differ, so this is a comparison rather than a validation.</li>
+        </ul>
+
+        <h3 id="m-lim">Limitations</h3>
+        <ul>
+          <li>Built from aggregate data. Individual-level calibration, discrimination and decision-curve analysis are still needed.</li>
+          <li>The tested-men survival factor was measured at two ages, in men with recorded laboratory results, and depends on how completely deaths are recorded; it is assumed to be the same for every comorbidity. Deaths missing from health-record data could also bias the condition hazard ratios in either direction<sup class="r">13</sup>.</li>
+          <li>Hazard ratios were measured over 10 years of follow-up and are applied for life. Combined hazard ratios for many conditions are multiplied without interaction terms.</li>
+          <li>Metastatic disease is identified from diagnosis codes, which are incomplete and can be dated late. The correction for other cancers (0.44) also removes some true prostate metastases in men with a second cancer, so it may understate risk. After correction the reference man reaches 1.5% by age 85, against 0.5% reported for similar men in Malmö<sup class="r">4</sup>; lymph-node codes at surgery and differences in era and imaging may account for the rest. Because the same definition applies to the patient and the reference man, the comparison is less affected than the displayed level. The metastatic rate is derived from ARPI timing scaled by each cohort's count ratio, not yet measured directly over person-time.</li>
+          <li>Men with comorbidities had fewer recorded metastatic diagnoses than predicted (see Checks); the tool does not adjust for this.</li>
+          <li>Part of the lifetime risk, including about half of the reference man's, lies beyond measured follow-up and is extrapolated. PSA values below 0.6 or above about 3.5 ng/mL are treated as the nearest measured band.</li>
+          <li>MRI, PSA density, grade history and DRE findings are not inputs.</li>
+        </ul>
+
+        <h3 id="m-ref">References</h3>
+        <ol class="refs">
+          <li>EAU Guidelines on Prostate Cancer, 2026. Diagnostic evaluation, section 5.2.8.</li>
+          <li>Wolf AM, Wender RC, Etzioni RB, et al. American Cancer Society guideline for the early detection of prostate cancer: update 2010. CA Cancer J Clin. 2010;60(2):70–98.</li>
+          <li>Lin DW, Carlsson S, Filson CP, et al. AUA/SUO guideline on early detection of prostate cancer (2023, amended 2026). J Urol. 2026. doi:10.1097/JU.0000000000004995.</li>
+          <li>Vickers AJ, et al. BMJ. 2010;341:c4521 (Malmö Preventive Project).</li>
+          <li>US Social Security Administration. 2023 period life table, men.</li>
+          <li>Cho H, Klabunde CN, Yabroff KR, et al. Comorbidity-adjusted life expectancy: a new tool to inform recommendations for optimal screening strategies. Ann Intern Med. 2013;159(10):667–76.</li>
+          <li>Putter H, Fiocco M, Geskus RB. Tutorial in biostatistics: competing risks and multi-state models. Stat Med. 2007.</li>
+          <li>Hanley JA. J Med Screen. 2010;17:147.</li>
+          <li>Buzzoni C, Auvinen A, Roobol MJ, et al. Metastatic prostate cancer incidence and prostate-specific antigen testing: new insights from the European Randomized Study of Screening for Prostate Cancer. Eur Urol. 2015;68(5):885–90.</li>
+          <li>Finne P, et al. Eur J Cancer. 2010;46:3102.</li>
+          <li>Lansdorp-Vogelaar I, Gulati R, Mariotto AB, et al. Personalizing age of cancer screening cessation based on comorbid conditions: model estimates of harms and benefits. Ann Intern Med. 2014;161(2):104–12.</li>
+          <li>Goodwin JS, Sheffield K, Li S, Tan A. Receipt of cancer screening is a predictor of life expectancy. J Gen Intern Med. 2016;31(11):1308–14.</li>
+          <li>Walter LC, Bertenthal D, Lindquist K, Konety BR. PSA screening among elderly men with limited life expectancies. JAMA. 2006;296(19):2336–42.</li>
+        </ol>
+      </div>
+    </div>
+    </details>
+  </section>
+
+  <footer><span>PSA Screening Decision Tool · research version 0.22.2 · model of 28 October 2026</span><span>Estimates only; not a substitute for clinical judgment.</span></footer>
+</div>
+
+<script>
+const M = {"mids":[67,72,77,82],"ages":["65-69","70-74","75-79","80-84"],"psaBands":["<1","1-1.99","2-3.99"],"psaRep":[0.6,1.41,2.83],"fine":{"65-69|<1":{"N":130496,"id":"6adec80f027df79bdfabc385","run":"Oct 25, 2026, 11:26 pm","refresh":"Oct 25, 2026, 11:05 pm","maxyr":19,"pt":[0,0,3.2e-05,0.000142,0.000291,0.000482,0.000652,0.001021,0.001414,0.002127,0.002626,0.003089,0.003387,0.003991,0.004973,0.005615,0.006857,0.007473,0.008352,0.008352],"lo":[0,0,1e-05,7.9e-05,0.000184,0.000334,0.00047,0.000764,0.00109,0.001691,0.002106,0.002497,0.002747,0.003242,0.004035,0.004543,0.005492,0.005904,0.006445,0.006445],"hi":[0,0,9.4e-05,0.000246,0.00045,0.000684,0.000893,0.001348,0.001815,0.002653,0.003248,0.003792,0.004146,0.004876,0.006081,0.006882,0.00848,0.009358,0.01068,0.01068],"cohort":"PSA-SS IDX67 PSA<1 C61 to 67 NOTX","design":"idx-notx"},"65-69|1-1.99":{"N":105874,"id":"6adecc91027df79bdfabcea6","run":"Oct 25, 2026, 11:45 pm","refresh":"Oct 25, 2026, 11:05 pm","maxyr":19,"pt":[0,1.1e-05,0.000123,0.000267,0.000723,0.001135,0.001405,0.00214,0.002791,0.003463,0.004578,0.005941,0.007278,0.008197,0.00926,0.010661,0.013569,0.014914,0.016644,0.017556],"lo":[0,1e-06,6.4e-05,0.00017,0.000532,0.000875,0.001099,0.001731,0.002297,0.002878,0.003832,0.005019,0.006183,0.006974,0.007871,0.009026,0.01136,0.012381,0.013544,0.014061],"hi":[0,6.8e-05,0.000223,0.000411,0.00097,0.001459,0.00178,0.002627,0.003371,0.004142,0.005437,0.006995,0.008522,0.009583,0.010835,0.012519,0.016094,0.017823,0.020253,0.021666],"cohort":"PSA-SS IDX67 PSA1-1.99 C61 to 67 NOTX","design":"idx-notx"},"65-69|2-3.99":{"N":84809,"id":"6adececd027df79bdfabd37a","run":"Oct 25, 2026, 11:54 pm","refresh":"Oct 25, 2026, 11:05 pm","maxyr":19,"pt":[0,1.4e-05,0.000387,0.000918,0.001711,0.002429,0.003485,0.004614,0.005972,0.00725,0.008754,0.010423,0.012756,0.014505,0.016599,0.019348,0.021921,0.023066,0.027893,0.030858],"lo":[0,2e-06,0.000259,0.000698,0.001377,0.002,0.002937,0.003945,0.00513,0.006273,0.007617,0.009101,0.01115,0.012687,0.01447,0.016772,0.018891,0.0198,0.022804,0.02451],"hi":[0,8.4e-05,0.000569,0.001196,0.00211,0.002932,0.004115,0.005373,0.006922,0.008344,0.010021,0.01189,0.014533,0.016516,0.018958,0.022208,0.025294,0.026712,0.033752,0.038297],"cohort":"PSA-SS IDX67 PSA2-3.99 C61 to 67 NOTX","design":"idx-notx"},"70-74|<1":{"N":82457,"id":"6adebb99ecee5f4184f851b0","run":"Oct 25, 2026, 10:32 pm","refresh":"Oct 25, 2026, 9:02 pm","maxyr":18,"pt":[0,0,0.0001,0.000278,0.000532,0.000707,0.001085,0.001589,0.002036,0.002704,0.003558,0.004567,0.005136,0.005708,0.006435,0.006909,0.007251,0.007251,0.007251],"lo":[0,0,4.3e-05,0.000164,0.000357,0.000492,0.00079,0.001196,0.00156,0.002106,0.002811,0.003651,0.004111,0.004561,0.005116,0.005462,0.005685,0.005685,0.005685],"hi":[0,0,0.000215,0.000456,0.000777,0.000999,0.001468,0.002085,0.002628,0.003438,0.004461,0.005662,0.006359,0.007077,0.008014,0.008646,0.009143,0.009143,0.009143],"cohort":"PSA-SS IDX72 PSA<1 C61 to 72 NOTX","design":"idx-notx"},"70-74|1-1.99":{"N":72233,"id":"6adebcf0027df79bdfaba331","run":"Oct 25, 2026, 10:38 pm","refresh":"Oct 25, 2026, 9:02 pm","maxyr":18,"pt":[0,3.2e-05,0.0002,0.00042,0.000719,0.001062,0.001785,0.002364,0.003195,0.004171,0.004991,0.006107,0.007801,0.008455,0.010378,0.01103,0.01454,0.017402,0.017402],"lo":[0,7e-06,0.000108,0.00027,0.000493,0.00077,0.001366,0.001841,0.002529,0.003336,0.00401,0.004948,0.006375,0.006909,0.008443,0.008924,0.011354,0.013066,0.013066],"hi":[0,0.000119,0.000355,0.000639,0.001028,0.001443,0.002306,0.003006,0.004001,0.005168,0.00616,0.007474,0.00947,0.010262,0.012644,0.013504,0.018368,0.022742,0.022742],"cohort":"PSA-SS IDX72 PSA1-1.99 C61 to 72 NOTX","design":"idx-notx"},"70-74|2-3.99":{"N":68065,"id":"6adeba4c0a32ede36b48f310","run":"Oct 25, 2026, 10:27 pm","refresh":"Oct 25, 2026, 9:02 pm","maxyr":18,"pt":[0,1.7e-05,0.000403,0.001279,0.002157,0.003352,0.004358,0.005591,0.006778,0.007795,0.009342,0.011936,0.014518,0.016601,0.018753,0.021068,0.023169,0.024217,0.026645],"lo":[0,2e-06,0.000259,0.000961,0.001717,0.002769,0.003649,0.004739,0.00579,0.006684,0.008028,0.010224,0.012452,0.01425,0.016054,0.017923,0.019485,0.020081,0.020714],"hi":[0,0.000105,0.000612,0.001684,0.002687,0.004032,0.005177,0.006562,0.007896,0.009048,0.010818,0.013863,0.016835,0.019234,0.021779,0.024604,0.027341,0.028943,0.033718],"cohort":"PSA-SS IDX72 PSA2-3.99 C61 to 72 NOTX","design":"idx-notx"},"75-79|<1":{"N":35461,"id":"6adecf250a32ede36b492bd2","run":"Oct 26, 2026, 12:00 am","refresh":"Oct 25, 2026, 11:05 pm","maxyr":13,"pt":[0,0.0001,0.000179,0.000378,0.000566,0.001314,0.001742,0.002027,0.00219,0.002936,0.003611,0.004119,0.004119,0.004119],"lo":[0,3e-05,7.1e-05,0.000189,0.000309,0.000825,0.001133,0.00133,0.001441,0.001906,0.002315,0.002588,0.002588,0.002588],"hi":[0,0.000289,0.000414,0.000715,0.000991,0.00203,0.002608,0.003008,0.00324,0.004392,0.005453,0.006324,0.006324,0.006324],"cohort":"PSA-SS IDX77 PSA<1 C61 to 77 NOTX","design":"idx-notx"},"75-79|1-1.99":{"N":32357,"id":"6aded0a2ecee5f4184f889cd","run":"Oct 26, 2026, 12:05 am","refresh":"Oct 25, 2026, 11:05 pm","maxyr":13,"pt":[0,0.000152,0.000364,0.000617,0.001111,0.001534,0.001999,0.002892,0.004155,0.004676,0.006136,0.008046,0.011719,0.013444],"lo":[0,5.4e-05,0.000184,0.000357,0.000704,0.001014,0.001346,0.001989,0.00286,0.003232,0.004229,0.00554,0.007745,0.008586],"hi":[0,0.000385,0.000683,0.001027,0.001705,0.002265,0.0029,0.004112,0.005895,0.006605,0.00868,0.011378,0.017117,0.020179],"cohort":"PSA-SS IDX77 PSA1-1.99 C61 to 77 NOTX","design":"idx-notx"},"75-79|2-3.99":{"N":33628,"id":"6aded1c0ecee5f4184f88c89","run":"Oct 26, 2026, 12:12 am","refresh":"Oct 25, 2026, 11:05 pm","maxyr":13,"pt":[0,0.000178,0.000734,0.001916,0.003118,0.004024,0.005273,0.006599,0.008322,0.009555,0.011043,0.012695,0.01358,0.015435],"lo":[0,7.1e-05,0.000443,0.00138,0.002375,0.003129,0.004163,0.005252,0.006651,0.007609,0.008688,0.0098,0.010306,0.010919],"hi":[0,0.00041,0.001177,0.002617,0.004045,0.005119,0.006612,0.00821,0.010309,0.01187,0.013867,0.016209,0.0176,0.021248],"cohort":"PSA-SS IDX77 PSA2-3.99 C61 to 77 NOTX","design":"idx-notx"},"80-84|<1":{"N":20130,"id":"6aded3320a32ede36b493645","run":"Oct 26, 2026, 12:18 am","refresh":"Oct 25, 2026, 11:05 pm","maxyr":9,"pt":[0,0,7.4e-05,0.000367,0.000795,0.001009,0.001972,0.001972,0.002908,0.002908],"lo":[0,0,8e-06,0.000128,0.000355,0.000467,0.000969,0.000969,0.001264,0.001264],"hi":[0,0,0.000434,0.000929,0.001638,0.002019,0.003732,0.003732,0.006026,0.006026],"cohort":"PSA-SS IDX81-82 PSA<1 C61 to 82 NOTX","design":"idx-notx"},"80-84|1-1.99":{"N":18492,"id":"6aded4ad0a32ede36b493a87","run":"Oct 26, 2026, 12:24 am","refresh":"Oct 25, 2026, 11:05 pm","maxyr":9,"pt":[0,0.000139,0.000312,0.001171,0.001471,0.001705,0.002408,0.003501,0.003501,0.003501],"lo":[0,3.1e-05,0.000109,0.000643,0.00084,0.000974,0.001344,0.001887,0.001887,0.001887],"hi":[0,0.000501,0.000789,0.002032,0.002466,0.002851,0.004097,0.006111,0.006111,0.006111],"cohort":"PSA-SS IDX81-82 PSA1-1.99 C61 to 82 NOTX","design":"idx-notx"},"80-84|2-3.99":{"N":20226,"id":"6aded61e027df79bdfabe3da","run":"Oct 26, 2026, 7:03 am","refresh":"Oct 26, 2026, 5:49 am","maxyr":9,"pt":[0,0.000118,0.000353,0.001675,0.003133,0.004774,0.006719,0.00851,0.011618,0.011618],"lo":[0,2.6e-05,0.000138,0.001028,0.002128,0.003383,0.004821,0.006057,0.007679,0.007679],"hi":[0,0.000426,0.000816,0.002635,0.0045,0.006598,0.009172,0.01169,0.016968,0.016968],"cohort":"PSA-SS IDX81-82 PSA2-3.99 C61 to 82 NOTX","design":"idx-notx"}},"hr":{"healthy":[0.5769,0.5978,0.6302,0.6161],"frail":[3.2444,2.5876,2.1318,1.7692],"clean":[0.5526,0.5772,0.5768,0.5245]},"tnxDeath10":{"all":[0.1365,0.2082,0.3218,0.4896],"healthy":[0.0812,0.1302,0.2171,0.3393],"frail":[0.3789,0.4533,0.563,0.6958],"clean":[0.07790039,0.1260584,0.2006623,0.2972412]},"ref":{"id":"6adeca6eecee5f4184f87bf5","run":"Oct 25, 2026, 11:36 pm","refresh":"Oct 25, 2026, 11:05 pm","N":160627,"maxyr":19,"pt":[0,0,8e-06,5.6e-05,0.0001,0.000215,0.00029,0.000446,0.00063,0.000852,0.001278,0.001513,0.002186,0.002624,0.003128,0.003864,0.004571,0.005626,0.00653,0.007391],"lo":[0,0,1e-06,2.4e-05,5.3e-05,0.000135,0.000191,0.000312,0.00045,0.000629,0.00098,0.001174,0.001726,0.002092,0.002505,0.003098,0.003664,0.004469,0.005052,0.005321],"hi":[0,0,5e-05,0.00012,0.000184,0.000335,0.000431,0.000629,0.000869,0.00114,0.001651,0.001931,0.002744,0.003264,0.003874,0.004779,0.005651,0.007012,0.008337,0.010058],"cohort":"PSA-SS IDX60 PSA<1 C61 to 60 (REF) NOTX","design":"idx-notx","r10":[0.001278,0.00098,0.001651],"r18":[0.00653,0.005052,0.008337],"r19":[0.007391,0.005321,0.010058]},"anchor":0.008230392,"lt":{"60":84544,"61":83585,"62":82563,"63":81473,"64":80314,"65":79084,"66":77783,"67":76416,"68":74984,"69":73486,"70":71916,"71":70269,"72":68539,"73":66722,"74":64811,"75":62797,"76":60675,"77":58429,"78":56024,"79":53477,"80":50785,"81":47960,"82":44998,"83":41922,"84":38760,"85":35529,"86":32236,"87":28901,"88":25563,"89":22265,"90":19063,"91":16023,"92":13194,"93":10617,"94":8320,"95":6333,"96":4672,"97":3335,"98":2298,"99":1534,"100":999},"cancerMod":{"healthy":1.07,"middle":1,"frail":[[0,0.87],[10,0.87],[16,0.65],[30,0.65]]},"items":{"h_hf":{"hr":1.4935302,"label":"Heart failure","tier":"frail"},"h_copd":{"hr":1.6917846,"label":"COPD","tier":"mod"},"h_o2":{"hr":1.4671603,"label":"Home oxygen","tier":"frail"},"h_ckd":{"hr":1.3238528,"label":"Chronic kidney disease","tier":"mod"},"h_esrd":{"hr":2.62364603159808,"label":"ESRD or dialysis","tier":"frail","note":"Cox6 N18.6 1.982 x N18 1.324 (N18.6 is a child code of N18, so ESRD patients carry both)"},"h_af":{"hr":1.1935344,"label":"Atrial fibrillation or flutter","tier":"mod"},"h_ihd":{"hr":1.1217183,"label":"Coronary artery disease","tier":"mod"},"h_pvd":{"hr":1.3185464,"label":"Peripheral vascular disease","tier":"mod"},"h_cva":{"hr":1.2262021,"label":"Prior stroke","tier":"mod"},"h_dm":{"hr":1.2809731,"label":"Type 2 diabetes mellitus","tier":"mod"},"h_mets":{"hr":1.8699297,"label":"Metastatic cancer (non-prostate)","tier":"frail","note":"Cox6 C78 1.87 (C77 1.74, C79 1.71); single largest used, conservative"},"h_cirr":{"hr":1.3915707,"label":"Cirrhosis","tier":"frail"},"h_pd":{"hr":2.2748907,"label":"Parkinson disease","tier":"frail"},"h_dem":{"hr":1.7435995,"label":"Dementia, including Alzheimer disease","tier":"frail","note":"Cox6 F03 1.74; Alzheimer G30 1.91"},"h_wc":{"hr":1.5865008,"label":"Wheelchair dependent","tier":"frail"},"h_adl":{"hr":1.5779932,"label":"Requires assistance with personal care","tier":"frail"},"h_maln":{"hr":1.2811642,"label":"Malnutrition","tier":"frail"},"h_wl":{"hr":1.1414641,"label":"Unintentional weight loss","tier":"mod"},"h_bmi":{"hr":1.1021311,"label":"BMI < 25 kg/m\u00b2","tier":"mod"},"h_alb":{"hr":1.7140933,"label":"Serum albumin < 3.5 g/dL","tier":"frail","note":"Cox6 TNX 9045 [0,3.5)"},"h_smk":{"hr":1.5369883,"label":"Tobacco dependence","tier":"mod","note":"Cox6 F17 nicotine dependence. F17 is not a reliable current-smoking definition, so the item is labelled as recorded dependence, not \"current smoker\"."}},"atten":[1.1787,1,0.8317,0.7199],"deathModel":{"id":"6ad67a59585251d70f983e11","name":"PSA-SS Cox6 death 65-84 + new conditions","run":"Oct 19, 2026, 4:20 pm","refresh":"Oct 19, 2026, 3:17 pm","ageHR":1.0914496},"haz":{"65-69|<1":[0,3.232e-05,0.00011172,0.00015375,0.00019978,0.00018107,0.00039854,0.00043351,0.00080589,0.00057809,0.00055226,0.00036775,0.00076944,0.00130318,0.00089201,0.00182307,0.00096739,0.00147124,0],"65-69|1-1.99":[1.122e-05,0.00011174,0.00014653,0.00046584,0.00042642,0.00028266,0.00078099,0.00070285,0.00073861,0.00125241,0.00156537,0.00157776,0.00111907,0.0013413,0.00184175,0.00402341,0.00197686,0.00269418,0.00153857],"65-69|2-3.99":[1.394e-05,0.0003747,0.00053679,0.00080982,0.00074175,0.0011044,0.00119581,0.00146158,0.00139971,0.00168111,0.00190541,0.00273882,0.00212225,0.00263519,0.00360236,0.0035198,0.00165553,0.00750922,0.00500825],"70-74|<1":[0,0.00010057,0.00018293,0.00026576,0.00018772,0.00041431,0.00056892,0.00052289,0.00081223,0.00108211,0.00134134,0.00079741,0.0008495,0.00116425,0.00081948,0.00064734,0,0],"70-74|1-1.99":[3.247e-05,0.00016894,0.00022409,0.00030915,0.00036194,0.00077862,0.00064144,0.00094557,0.00114759,0.00100361,0.00142498,0.00228152,0.00093248,0.00294987,0.00107046,0.0062717,0.00565877,0],"70-74|2-3.99":[1.736e-05,0.00038763,0.00089123,0.00090596,0.00125457,0.00107907,0.00135048,0.00133445,0.00118058,0.0018582,0.00323392,0.0033827,0.00289083,0.00320046,0.0036872,0.00360126,0.00200336,0.00512331],"75-79|<1":[9.951e-05,8.061e-05,0.00020724,0.00020246,0.00083659,0.00049997,0.00034941,0.00021002,0.00102877,0.00100147,0.00081219,0,0],"75-79|1-1.99":[0.00015215,0.00021373,0.00026103,0.00052311,0.00046184,0.00052626,0.00105485,0.00157207,0.00069014,0.00206091,0.00290146,0.00605936,0.00313391],"75-79|2-3.99":[0.00017818,0.00056112,0.00121505,0.00126816,0.00098151,0.00140249,0.00155452,0.00212014,0.00160677,0.00206661,0.00247923,0.00145849,0.00339787],"80-84|<1":[0,7.554e-05,0.00031406,0.00048264,0.00025732,0.00123819,0,0.00144857,0],"80-84|1-1.99":[0.00013885,0.00017604,0.00091018,0.00033244,0.0002728,0.00087464,0.00146097,0,0],"80-84|2-3.99":[0.0001177,0.00023897,0.00138818,0.0016019,0.00189726,0.00237771,0.00234544,0.00440656,0]},"hazRef":[0,8.3e-06,4.787e-05,4.561e-05,0.00011756,7.733e-05,0.00016385,0.00019395,0.00023785,0.00046182,0.00025749,0.00075099,0.00049728,0.00058434,0.00087163,0.00086236,0.00132132,0.00117164,0.0011492],"joinNote":"Cause-specific ARPI hazards (annual) derived from FINE cell Aalen-Johansen CIFs: lam_k = dF_A(k)/(1-F_A(k-1)-F_D(k-1)). Patient CIF = sum lam_k * event-free survival using life-table^HR death.","itemsPrev":{"h_hf":{"hr":1.9426091,"label":"Heart failure","tier":"frail"},"h_dem":{"hr":1.9830565,"label":"Dementia or Alzheimer disease","tier":"frail","note":"Cox5 F03 HR; Alzheimer G30 2.13"},"h_o2":{"hr":1.6690854,"label":"Home oxygen","tier":"frail"},"h_wc":{"hr":1.8874388,"label":"Wheelchair dependence (any record)","tier":"frail"},"h_adl":{"hr":1.6389667,"label":"Needs help with personal care","tier":"frail"},"h_copd":{"hr":1.8311495,"label":"COPD","tier":"mod"},"h_ckd":{"hr":1.6889645,"label":"Chronic kidney disease","tier":"mod"},"h_dm":{"hr":1.3927027,"label":"Type 2 diabetes","tier":"mod"},"h_smk":{"hr":1.6408262,"label":"Current smoker","tier":"mod"},"h_ca":{"hr":1.1505501,"label":"History of another cancer","tier":"mod"},"h_cva":{"hr":1.3546885,"label":"Stroke","tier":"mod"},"h_gait":{"hr":1.1926962,"label":"Gait problem or reduced mobility","tier":"mod","note":"Cox5 R26 HR; Z74.0 1.18"},"h_bmi":{"hr":1.2309572,"label":"BMI under 25","tier":null},"h_hosp":{"hr":1.165788,"label":"Hospital admission in the past 12 months","tier":null,"note":"Cox5 6ad64abc91fadf58daedea93: cohort membership, inpatient 1 d-1 y before index PSA"}},"cleanMeta":{"65-69":{"id":"6ad6848c91fadf58daee9862","run":"Oct 19, 2026, 4:59 pm","N":277920,"deaths":14714,"d10":0.07790039,"last_day":7288},"70-74":{"id":"6ad68177585251d70f9851f0","run":"Oct 19, 2026, 4:52 pm","N":159576,"deaths":11945,"d10":0.1260584,"last_day":7276},"75-79":{"id":"6ad6862c585251d70f9862b9","run":"Oct 19, 2026, 5:06 pm","N":62477,"deaths":4219,"d10":0.2006623,"last_day":5768},"80-84":{"id":"6ad687b9585251d70f9867d3","run":"Oct 19, 2026, 5:12 pm","N":16802,"deaths":983,"d10":0.2972412,"last_day":3872}},"cancerModel":{"id":"6ad68a14585251d70f986d1b","name":"PSA-SS Cox7 ARPI 65-84 + new conditions","run":"Oct 19, 2026, 5:24 pm","ageHR":1.0706346},"fatal":{"ages":[70,79],"frac":[0.352,0.288],"outcome":"mets","note":"v0.17.1: share of men with a first metastatic code (C61 + C77/C78/C79/C7B; 11 common other primaries excluded) who die of prostate cancer = 1 - 10-y relative survival (TriNetX KM / US life table at band midpoint 70 / 79).","src":{"65-74":{"analysis":"6adfbdb7027df79bdfad921a","query":15289315,"N":45861,"deaths":12207,"km10":0.458,"lt10":0.706},"75-84":{"analysis":"6adfbf56ecee5f4184fa4474","query":15289330,"N":31167,"deaths":9561,"km10":0.296,"lt10":0.416}}},"lag":{"default":4,"range":[2,8],"note":"Lead-time lag: ARPI starts within L years of the visit are not counted as screen-modifiable. Base 4 y (ERSPC mortality lag ~7 y [Hanley 2010] minus ~3 y earlier metastasis benefit [Buzzoni 2015]; advanced-cancer lead time 5.3 y [Finne 2010]; trial-arm lead time ~4 y [Tsodikov 2017])."},"psaCal":{"psa":[0.704,1.221,1.728,2.232,2.734,3.46],"mult":[0.8,0.888,0.944,0.911,1.027,1.222],"note":"v0.15 (NOTX): narrow PSA bands at index age 72 (first in-band PSA at exactly 72, C61 excluded at ages 0-72; 10-y ARPI CIF, competing risks) divided by the v0.14 3-band interpolation of the 70-74 cells at the band geometric midpoint; applied as a hazard multiplier at all ages (interpolated in log PSA, flat outside). Replaces the v0.8.1 multipliers (old exclusion design), kept as psaCalV08.","src":{"0.5-0.99":"6adebddeecee5f4184f85766","1-1.49":"6adebf000a32ede36b48fe23","1.5-1.99":"6adec062ecee5f4184f85e3a","2-2.49":"6adec1c7ecee5f4184f861f7","2.5-2.99":"6adec35a0a32ede36b490b1e","3-3.99":"6adec525027df79bdfabbc33"},"detail":{"0.5-0.99":{"N":52707,"arpi":68,"obs10":0.00306,"lo":0.002225,"hi":0.004139,"pred":0.003826,"run":"Oct 25, 2026, 10:42 pm","refresh":"Oct 25, 2026, 9:02 pm"},"1-1.49":{"N":41831,"arpi":81,"obs10":0.004217,"lo":0.00314,"hi":0.005577,"pred":0.00475,"run":"Oct 25, 2026, 10:47 pm","refresh":"Oct 25, 2026, 9:02 pm"},"1.5-1.99":{"N":31496,"arpi":86,"obs10":0.005912,"lo":0.004347,"hi":0.007902,"pred":0.006261,"run":"Oct 25, 2026, 10:53 pm","refresh":"Oct 25, 2026, 9:02 pm"},"2-2.49":{"N":24386,"arpi":92,"obs10":0.007163,"lo":0.005377,"hi":0.009392,"pred":0.00786,"run":"Oct 25, 2026, 10:59 pm","refresh":"Oct 25, 2026, 9:02 pm"},"2.5-2.99":{"N":19096,"arpi":79,"obs10":0.009369,"lo":0.006995,"hi":0.012335,"pred":0.009126,"run":"Oct 25, 2026, 11:05 pm","refresh":"Oct 25, 2026, 9:02 pm"},"3-3.99":{"N":26949,"arpi":145,"obs10":0.011419,"lo":0.009241,"hi":0.013976,"pred":0.009342,"run":"Oct 25, 2026, 11:13 pm","refresh":"Oct 25, 2026, 11:05 pm"}}},"labMix":{"p":{"h_alb":0.09368330539248133,"h_bmi":0.29412128598029086},"note":"Lab items (albumin <3.5, BMI <25) could not be excluded from the CLEAN baselines, so the baseline hazard is a mixture over them. Correction: baseline / E[HR_lab^atten] over the 4-cell joint distribution. p = recorded at age <=74 (index age 70-74), approximating before index; measured at 70-74, applied at all ages. Ever-recorded counts were rejected (post-index illness inflates them).","src":{"denominator":{"query":"15229653 PSA-SS LABPREV 70-74 denominator age<=74 (CLEAN + PSA 9857 age-at-event 0-74)","count":161651,"counted":"2026-10-22 13:00"},"h_alb":{"query":"15229621 PSA-SS LABPREV 70-74 albumin age<=74","term":"TNX 9045 <=3.49 g/dL any occurrence, age at event 0-74","count":15144,"hcos":83},"h_bmi":{"query":"15229639 PSA-SS LABPREV 70-74 BMI age<=74","term":"TNX 9083 <=24.99 kg/m2 any occurrence, age at event 0-74","count":47545,"hcos":80},"joint":{"query":"15229632 PSA-SS LABPREV 70-74 albumin AND BMI age<=74","count":5576,"hcos":69},"ever":{"h_alb":"15229577 (27,930)","h_bmi":"15229601 (59,491)","joint":"15229588 (14,159)"}},"pJoint":{"items":["h_alb","h_bmi"],"p":0.03449406437324854},"pEver":{"h_alb":0.17277963019096695,"h_bmi":0.36802123092340905,"joint":0.08758993139541357,"note":"ever-recorded counts, NOT used (include post-index illness)"}},"leCut":{"default":15,"range":[10,15],"note":"Guidelines: ACS 2010 >=10 y; AUA 2013 Statement 5 and ACP 2013 <10-15 y should not be screened; NCCN 2026 discontinue if <10 y; EAU 2026 <15 y unlikely to benefit; AUA/SUO 2023 (amended 2026) Statement 7 gives no number. Default 15 y (EAU 2026 strong recommendation); 10 y is the sensitivity."},"calibration":{"date":"2026-10-23","model":"v0.11 M3 (unchanged in v0.12: death side not modified except ESRD/CKD de-duplication, not in any calibration cohort)","cohorts":13,"betaOrigin":[0.873,0.788,0.958],"betaOriginOverdispersed":[0.737,1.01],"interceptModel":{"a":-0.066,"b":[1.04,0.87,1.2]},"byBand":{"70-74":0.82,"75-79":0.98},"pooledOE":[0.954,0.93,0.979],"recalibrated":false,"departure":"Pre-registered rule 2 (recalibrate when the calibration slope's confidence interval excludes 1) was not applied; the slope is reported as measured.","independent":false,"arpiOE":0.63,"files":"fit_primary_M3.md"},"horizon":{"mode":"lifetime","maxAge":110,"refExt":"last3","note":"v0.10: cancer criterion uses ARPI risk over the rest of life (after the lag) for both patient and reference man, replacing 'to age 85' (which made the counted window shrink to 0 by age 81). Reference man measured 20 y; beyond that, extrapolated with the same last-3-years rule as patient cells (primary) or the 80-84 PSA<1 cell (sensitivity)."},"itemsAge":{"ages":[70,80],"lnhr":{"h_hf":[0.40596531631650995,0.40546924143295554],"h_copd":[0.5534518009694352,0.47022804156340764],"h_o2":[0.3995953145271955,0.42371391447051615],"h_ckd":[0.31391596008195327,0.256106804258618],"h_esrd":[0.9989816229690771,0.8220452477294279],"h_af":[0.16326691468709278,0.19638889617465538],"h_ihd":[0.11150273355700867,0.08663043777483291],"h_pvd":[0.2995562940140711,0.2303227590210962],"h_cva":[0.22059382351921294,0.15700605649930968],"h_dm":[0.2610722763640296,0.2302744658011769],"h_mets":[0.7054749800232714,0.5350554951618267],"h_cirr":[0.31111560004427513,0.33808465026907986],"h_pd":[0.8657431383299758,0.8276112006522407],"h_dem":[0.566344357398107,0.6179017309547351],"h_wc":[0.4681629362092545,0.5091298667824902],"h_adl":[0.3140303624320749,0.3487844050820659],"h_maln":[0.22335136971846922,0.21485941239199918],"h_wl":[0.21544656537140752,0.15398183700268217],"h_bmi":[0.07778412823291417,0.1048289143829037],"h_alb":[0.562222045835699,0.36644426831220606],"h_smk":[0.4539596730368898,0.30469869007165057]},"src":{"65-74":"6adb53b90a32ede36b43381e PSA-SS M3 Cox death 65-74 (run Oct 23 2026 8:33 am, refresh 5:51 am; index 126,606 / 567,587)","75-84":"6adb55610a32ede36b433a55 PSA-SS M3 Cox death 75-84 (run Oct 23 2026 8:40 am, refresh 5:51 am); index 47,107 / 178,916"},"fallbacks":["h_adl 75-84 -> Cox6 x atten(80) = 1.417 (M3 CI 1.08-2.52, ratio 2.33 > 2)"],"note":"v0.11: M3 age-split Cox (same spec as Cox6: HOSP1Y YES/NO cohorts split by index age, 32 covariates, Deceased 180-3650 d). ln HR linear in age between 70 and 80, flat outside; replaces atten for listed death items (pre-specified rule, runbook 08:40). Metastatic = max of C77/C78/C79 per band; ESRD = N18.6 x N18 per band."},"version":"0.22.1","date":"2026-10-28","v018Note":"v0.18 (2026-10-27): the mets/ARPI count ratio is now applied to cumulative incidence at each cohort's matched follow-up, with a fitted hazard constant per cohort (1.38-3.02) instead of using the raw ratio as a hazard multiplier. Reference man fitted on his 19-year window (2.81 vs 2.82). Stopping ages and Table 1 unchanged; cell CIFs move by up to about 19%.","refMatch":"hr","zeroTail":"drop","hrScale":1,"v012Note":"v0.12: (1) reference man health-matched: given the patient's own death-hazard multiplier (refMatch 'hr'; 'none' = v0.11 average man). (2) zero tails: trailing follow-up years after a cell's last observed ARPI start are treated as beyond follow-up (zeroTail 'drop'; 'keep' = v0.11). Checked in the FINE exports: deaths continue in those years and roughly 1,000-1,400 men were still at risk at the last ARPI start, so zero events there are small-count noise, not zero hazard. (3) ESRD implies CKD (ESRD log-HR already includes the N18 term). (4) hrScale k applies to every man incl. average and reference (healthy-screener sensitivity). Changes (1)-(2) came from a face-validity check (healthy 70, PSA 0.1 classed continue), not from fitting to outcomes.","v013Note":"v0.13 (2026-10-24): interface, labels and methods text only; model numbers identical to v0.12.","v014Note":"Cancer-side cells rebuilt with age-anchored cohorts (2026-10-24): index = first in-band PSA at one exact age (67, 72, 77; 81-82 for the oldest band; 60 for the reference man) with a prior PSA >=6 mo and a visit >=1 y earlier; prostate cancer (C61) excluded only if coded at or before the index age. The earlier design excluded C61 before ANY in-band PSA, which removed men diagnosed during follow-up who later had a post-treatment PSA in range (biased PSA<1 cells and the reference low). Cells still on the earlier design: . psaCal (narrow 70-74 bands) kept from the earlier design.","psaCalV08":{"psa":[0.704,1.221,1.728,2.232,2.734,3.46],"mult":[0.715,0.887,1.012,0.884,1.152,1.258],"note":"v0.14.1: narrow PSA bands at index age 72 (first in-band PSA at exactly 72, C61 excluded at ages 0-72; 10-y ARPI CIF, competing risks) divided by the v0.14 3-band interpolation of the 70-74 cells at the band geometric midpoint; applied as a hazard multiplier at all ages (interpolated in log PSA, flat outside). Replaces the v0.8.1 multipliers (old exclusion design), kept as psaCalV08.","src":{"0.5-0.99":"6add820d027df79bdfa95138","1-1.49":"6add84cb027df79bdfa9578b","1.5-1.99":"6ade33380a32ede36b47a62e","2-2.49":"6ade3509027df79bdfaa5c1c","2.5-2.99":"6ade375cecee5f4184f70ef3","3-3.99":"6ade3957ecee5f4184f71410"},"detail":{"0.5-0.99":{"N":49930,"arpi":82,"obs10":0.003583,"lo":0.002681,"hi":0.004721,"pred":0.005011,"run":"Oct 25, 2026, 12:14 am","refresh":"Oct 24, 2026, 11:40 pm"},"1-1.49":{"N":42582,"arpi":94,"obs10":0.004903,"lo":0.003737,"hi":0.006349,"pred":0.00553,"run":"Oct 25, 2026, 12:26 am","refresh":"Oct 24, 2026, 11:40 pm"},"1.5-1.99":{"N":28490,"arpi":86,"obs10":0.006809,"lo":0.005064,"hi":0.009006,"pred":0.006731,"run":"Oct 25, 2026, 12:50 pm","refresh":"Oct 25, 2026, 12:25 pm"},"2-2.49":{"N":22808,"arpi":85,"obs10":0.007133,"lo":0.005329,"hi":0.009395,"pred":0.008071,"run":"Oct 25, 2026, 1:00 pm","refresh":"Oct 25, 2026, 12:25 pm"},"2.5-2.99":{"N":17748,"arpi":80,"obs10":0.010521,"lo":0.007903,"hi":0.01377,"pred":0.009133,"run":"Oct 25, 2026, 1:08 pm","refresh":"Oct 25, 2026, 12:25 pm"},"3-3.99":{"N":27448,"arpi":152,"obs10":0.011716,"lo":0.009534,"hi":0.014267,"pred":0.009314,"run":"Oct 25, 2026, 6:17 pm","refresh":"Oct 25, 2026, 4:52 pm"}}},"v0141Note":"psaCal rebuilt on the age-anchored design (6 narrow bands at 72). Everything else as v0.14.","v015Note":"NOTX: cancer cells and reference man exclude men with markers of earlier prostate cancer treatment coded at or before the index age (Z85.46, Z90.79, ATC L02B, L02AE, ICD-10-PCS 0VT04ZZ/0VT00ZZ, CPT 55840/55842/55845/55866, ICD-10-PCS DV00, CPT 55875). Any prior PSA >= 4 is NOT excluded (not cancer; kept as a risk factor); 5-ARIs and 0VT08ZZ (HoLEP) not excluded. Cells not replaced: none.","extrap":"attainedAge","extrapNote":"v0.16: beyond a cohort's measured follow-up, the yearly ARPI rate is taken from the next older index-age cohort (same PSA band) at the same attained age; the 80-84 cohorts, with no older cohort, carry forward the mean of their last 3 measured years. Reference man beyond his measured years: the PSA<1 cohorts at the same attained age. v0.15 rule (each cohort carries its own last-3-year mean) kept as a sensitivity (extrap absent).","outcome":"mets","outcomeScale":{"cells":{"65-69|<1":1.1328,"65-69|1-1.99":1.0468,"65-69|2-3.99":1.1953,"70-74|<1":1.0902,"70-74|1-1.99":0.9076,"70-74|2-3.99":0.9572,"75-79|<1":1.0684,"75-79|1-1.99":0.9624,"75-79|2-3.99":0.9361,"80-84|<1":0.9229,"80-84|1-1.99":0.8161,"80-84|2-3.99":0.6816},"ref":1.2502,"counts":{"65-69|<1":{"mets":381,"arpi":149},"65-69|1-1.99":{"mets":586,"arpi":248},"65-69|2-3.99":{"mets":1001,"arpi":371},"70-74|<1":{"mets":283,"arpi":115},"70-74|1-1.99":{"mets":336,"arpi":164},"70-74|2-3.99":{"mets":659,"arpi":305},"75-79|<1":{"mets":82,"arpi":34},"75-79|1-1.99":{"mets":126,"arpi":58},"75-79|2-3.99":{"mets":243,"arpi":115},"80-84|<1":{"mets":25,"arpi":12},"80-84|1-1.99":{"mets":35,"arpi":19},"80-84|2-3.99":{"mets":80,"arpi":52},"ref":{"mets":381,"arpi":135}},"note":"v0.22: per-cohort like-for-like ratios restored. Each cohort's yearly ARPI rate is multiplied by that cohort's own count of men with coded metastatic prostate cancer divided by its own count of ARPI starts; the reference man by his own ratio (381/135 = 2.82). Both counts come from the same men over the same follow-up, so censoring affects them equally. Pooled ratio 3,837/1,622 = 2.37; per-cohort 1.54-2.82. v0.19-v0.21 instead divided coded metastatic counts by N x CIF at the last year, which treats a censored count as a cumulative incidence and understates risk about 7-fold.","otherCancerFactor":{"value":0.443,"note":"v0.22.1: pooled share of coded metastatic PCa (C61 + C77/C78/C79/C7B) remaining after excluding men with any other primary cancer at any age (C00-C14, C15-C26, C30-C39, C43, C45-C49, C50, C64-C68, C69-C72, C73-C75, C81-C96), relative to cohort N with the same exclusion. 426 events vs 961 expected across REF 60, 67, 72, 77 PSA<1 cohorts (per cohort 0.50, 0.44, 0.36, 0.43). DEFCHK queries 15321698-15321825, 2026-10-28."}},"hrScaleAge":{"ages":[67,77],"k":[0.6,0.66],"note":"v0.17: healthy-screener factor measured in TriNetX: men with an LDL result at 65-67 (75-77), PSA-tested (PSA 0-3.99 at the index age, prior PSA, visit 1 y before, NOTX) vs never-tested (ambulatory visit at the index age, no PSA ever, same exclusions); 10-y KM death 13.9% vs 27.1% at 67 (HR 0.43), 35.3% vs 50.5% at 77 (HR 0.53). Tested men's hazard vs the US life table: 0.56 (all deaths recorded) to 0.63 (TriNetX records ~89%) at 67; 0.62 to 0.70 at 77; midpoints used. Analyses 6adf615e027df79bdfacbbec, 6adf64c4ecee5f4184f971f7. Applied to every man (average, patient and reference) at his current age; linear between 67 and 77, flat outside."},"margin":{"cancerSpread":1.37,"leBand":1.5,"note":"v0.22: borderline band, display only (cat unchanged). cancerSpread 1.37 = median half-width (as a factor) of the 95% Monte Carlo interval for the patient-to-reference ratio across 48 profiles (1,000 draws; IQR 1.30-1.41); a verdict is borderline when |ln(patient/reference)| <= ln(1.37). leBand 1.5 y unchanged (v0.21)."},"v019Note":"v0.19 (2026-10-28): the twelve per-cohort mets/ARPI count ratios were replaced by one pooled constant (0.357). Levels of predicted metastatic risk fall about 7-fold; the bar (health-matched reference man) falls with them, so the rule moves only partly: median first stopping age +1.7 y (range 0 to 5.3), 97 of 1,365 grid profiles flip, all from stopping to continuing. Reference man 0.43% by 85 vs 0.5% in Malmo. ARPI vs mets outcome: 0 verdict flips under the single factor.","v020Note":"v0.20 (2026-10-28): the pooled constant was refitted by Poisson likelihood on the twelve cohort cells (predicted vs observed coded metastatic events at each cohort's last measured year), giving 0.314 (95% profile-likelihood CI 0.304-0.324) instead of the arithmetic count ratio 0.357. Deviance 179.2 -> 113.1. Cell ratios are now centred on 1 (range 0.61-1.32) rather than uniformly 1.14x high (range 0.70-1.50). Reference man 0.60% lifetime, 0.38% by age 85, vs 0.5% in Malmo. First stopping age 1 year earlier at PSA 1.0-1.8; 14 of 1,800 grid profiles flip, all stopping to continuing. Cell-weighted (equal weight per cohort) fit gives 0.340 as a sensitivity.","v021Note":"v0.21 (2026-10-28): borderline band added to the display only; cat, and therefore Table 1, are unchanged. A verdict is labelled borderline when the deciding criterion sits inside the model's own uncertainty: the cancer comparison within the 0.61-1.32x cohort spread, or life expectancy within 1.5 y of the threshold. 65 y with PSA 0.7 is borderline (17% below the bar); 72 y with PSA 1.8 is not (1.5x the bar).","v022Note":"v0.22 (2026-10-28): (1) the v0.19-v0.21 pooled constant (0.314) is withdrawn. It was fitted by comparing crude counts of coded metastatic disease, which are reduced by censoring, with N x cumulative incidence, which is not; observed ARPI counts are only 11-29% of N x CIF at the last measured year, so the constant understated metastatic risk about 7-fold and, being shared by patient and reference man, cancelled from the rule, which returned the recommendation to the ARPI model. The per-cohort mets/ARPI count ratios (v0.17) are restored. (2) Prostate cancer risk-factor inputs removed (they were ARPI-start hazard ratios). (3) Age-70 disagreement reported in both directions. (4) Fatal-share block and metastatic calibration from v0.17.1 restored (the v0.18-v0.21 line descended from v0.17 and had the ARPI-based fatal share).","fatalARPI":{"ages":[70,79],"frac":[0.513,0.5],"fracTnx":[0.581,0.659],"note":"Share of ARPI starters dying of prostate cancer = 1 - 10-y relative survival (KM after first ARPI / US life-table survival at band midpoint). fracTnx uses TriNetX all-PSA-tested men as expected survival instead.","src":{"65-74":{"analysis":"6ad6a06891fadf58daeee38e","run":"Oct 19, 2026, 6:59 pm","N":31915,"deaths":8259,"medianDays":2278,"km":{"1":0.9043,"2":0.8055,"3":0.7167,"4":0.6389,"5":0.5677,"7":0.4605,"10":0.3441}},"75-84":{"analysis":"6ad6a284585251d70f98ad43","run":"Oct 19, 2026, 7:07 pm","N":25426,"deaths":7800,"medianDays":1633,"km":{"1":0.8672,"2":0.7422,"3":0.6339,"4":0.5395,"5":0.4637,"7":0.3457,"10":0.2081}}}},"calibrationMets":{"date":"2026-10-26","design":"13 CAL cohorts (old C61 exclusion) + 2 CLEAN anchors; count of men with C61 AND (C77|C78|C79|C7B) at any time (C61 is post-index by cohort design); observed rate relative to CLEAN anchor vs model-predicted 10-y relative risk","pooledOE10":[0.72,0.67,0.78],"pooledOElife":0.78,"arpiOErel":"ARPI 10-y CIF relative to CLEAN: 0.24-0.92","cells":"see Code/calculator/calmets.json"},"v0221Note":"v0.22.1 (2026-10-28): every metastatic rate (patient cohorts and reference man) multiplied by 0.443, the measured share of coded metastatic prostate cancer not attributable to men with another primary cancer. Cancels from the decision rule (3 of 4,680 example verdicts change); lowers the displayed level about 2.3-fold."};
+// PSA stopping calculator v0.17 (model code first versioned v0.12) (2026-10-23; first draft 2026-10-18). Pure functions over the embedded data M.
+function makeModel(M){
+  // v0.17: outcome = coded metastatic prostate cancer (C61 + C77-C79/C7B after index). Each cell's yearly ARPI hazard is
+  // rescaled by that cell's ratio of metastatic to ARPI counts (M.outcomeScale), the reference man by his own ratio.
+  // M.outcome==='arpi' (or no outcomeScale) keeps the v0.16 ARPI outcome (sensitivity).
+  if(M.outcomeScale && M.outcome==='mets' && !M._scaled){ const S=M.outcomeScale; M=JSON.parse(JSON.stringify(M));
+    // v0.18: hazards use the fitted constant S.fit (solved so the cohort CIF at its last measured year matches
+    // the count ratio applied to the observed ARPI incidence); the CIF arrays keep the raw ratio.
+    const hz=S.fit&&S.fit.cells?S.fit.cells:S.cells, kref=S.fit&&S.fit.ref!=null?S.fit.ref:S.ref;
+    for(const k in M.haz){ const r=hz[k]; if(r) M.haz[k]=M.haz[k].map(x=>x*r); }
+    if(M.fine) for(const k in M.fine){ const r=S.cells[k]; if(r) for(const q of ['pt','lo','hi']) if(M.fine[k][q]) M.fine[k][q]=M.fine[k][q].map(x=>x*r); }
+    M.hazRef=M.hazRef.map(x=>x*kref); M._scaled=true; }
+  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  // piecewise-linear interpolation on sorted knots xs -> ys, clamped at ends
+  function pw(xs,ys,x){
+    if(x<=xs[0]) return ys[0];
+    if(x>=xs[xs.length-1]) return ys[ys.length-1];
+    for(let i=0;i<xs.length-1;i++){ if(x<=xs[i+1]){ return lerp(ys[i],ys[i+1],(x-xs[i])/(xs[i+1]-xs[i])); } }
+  }
+  // ---- life table: l(x) with log-linear interpolation, extended past 100 with constant q
+  const LT={}; for(const k in M.lt) LT[+k]=M.lt[k];
+  for(let x=101;x<=115;x++) LT[x]=LT[x-1]*(1-0.38);
+  function l(x){ const f=Math.floor(x), t=x-f; return Math.exp(lerp(Math.log(LT[f]),Math.log(LT[f+1]),t)); }
+  // ---- health: additive on the log-hazard scale (v0.2)
+  // h may be a tier name ('healthy'|'middle'|'frail', v0.1 behaviour) or an array of item ids.
+  // Items: baseline = healthy-tier hazard vs all men (no conditions), times the product of each item's
+  // mutually adjusted Cox HR, with log-HRs scaled by an age attenuation (normalised at 72).
+  const item=e=>typeof e==='string'?M.items[e]:e;
+  function tierOf(h){ if(!Array.isArray(h)) return h; if(h.some(e=>item(e)&&item(e).tier==='frail')) return 'frail'; if(h.some(e=>item(e)&&item(e).tier==='mod')) return 'middle'; return 'healthy'; }
+  // v0.12: M.hrScale (default 1) multiplies every man's death hazard, average and reference man included (healthy-screener sensitivity k).
+  // v0.17: M.hrScaleAge={ages,k} = measured healthy-screener factor by age (TriNetX tested vs untested men, scaled to the
+  // life table), linear between knots, flat outside; applied at the man's current age for the rest of his life.
+  const K=age=>{ const A=M.hrScaleAge; if(A&&A.k) return pw(A.ages,A.k,age==null?A.ages[0]:age); return M.hrScale==null?1:M.hrScale; };
+  // v0.12: ESRD's log-HR already includes the CKD (N18) term (N18.6 x N18), so CKD is ignored when ESRD is ticked.
+  function dedupe(h){ const ids=h.map(e=>typeof e==='string'?e:null); return ids.includes('h_esrd')?h.filter(e=>e!=='h_ckd'):h; }
+  function hr(age,h){
+    if(!Array.isArray(h)){ if(h==='middle') return K(age); return K(age)*pw(M.mids,M.hr[h],age); }
+    const base=pw(M.mids,M.hr.clean||M.hr.healthy,age)/labMix(age)*(M.baseScale||1);
+    const lsum=dedupe(h).reduce((s,e)=>s+(item(e)?itemLH(e,age):0),0);
+    return K(age)*base*Math.exp(lsum)*(lsum!==0?(M.condScale||1):1);
+  }
+  // condition multiplier vs a man with none of the listed conditions (what the page shows)
+  function condHR(age,h){ return Array.isArray(h)?Math.exp(dedupe(h).reduce((s,e)=>s+(item(e)?itemLH(e,age):0),0)):1; }
+  // v0.11 (M3): a death item's log-HR at this age. Listed items use the age-split Cox models (65-74 placed at 70,
+  // 75-84 at 80, linear between, flat outside); anything else (user-added conditions) keeps the v0.10 age attenuation.
+  function itemLH(e,age){ const A=M.itemsAge; if(typeof e==='string'&&A&&A.lnhr&&A.lnhr[e]) return pw(A.ages,A.lnhr[e],age);
+    return pw(M.mids,M.atten,age)*Math.log(item(e).hr); }
+  // v0.9: the CLEAN baselines could not exclude albumin <3.5 or BMI <25 (lab terms cannot be time-limited), so the
+  // measured baseline is a mixture. labMix(age) = prod_j (1 - p_j + p_j * HR_j^atten); dividing by it gives the hazard of a man
+  // without either. Cohort-level predictions (calibration) multiply back by labMix. p = null -> factor 1 (no change).
+  function labMix(age){ const L=M.labMix; if(!L||!L.p) return 1; const g=k=>Math.exp(itemLH(k,age));
+    if(L.pJoint&&L.pJoint.p!=null){ const [a,b]=L.pJoint.items, pa=L.p[a], pb=L.p[b], pab=L.pJoint.p; if(pa!=null&&pb!=null)
+      return (1-pa-pb+pab)+(pa-pab)*g(a)+(pb-pab)*g(b)+pab*g(a)*g(b); }
+    let f=1; for(const k in L.p){ const p=L.p[k]; if(p==null||!M.items[k]) continue; f*=1-p+p*g(k); } return f; }
+  // survival at hazard multiplier hrv. Sensitivity M.hrLate={after:A,f}: beyond A years of follow-up the log of the
+  // multiplier relative to the average man (k) shrinks by fraction f (HRs measured over 10 y applied for life). Default: none.
+  function survH(age,t,hrv){ const Z=M.hrLate; if(!Z||!Z.f||t<=Z.after) return Math.pow(l(age+t)/l(age),hrv);
+    const hl=K(age)*Math.exp((1-Z.f)*Math.log(hrv/K(age))); return Math.pow(l(age+Z.after)/l(age),hrv)*Math.pow(l(age+t)/l(age+Z.after),hl); }
+  function surv(age,t,h){ return survH(age,t,hr(age,h)); }
+  function death(age,t,h){ return 1-surv(age,t,h); }
+  function lifeExp(age,h){ let s=0,dt=0.25; for(let t=0;age+t<114;t+=dt){ s+=0.5*(surv(age,t,h)+surv(age,t+dt,h))*dt; } return s; }
+  // ---- cancer component: FINE all-men ARPI CIF curves, read at horizon h (years)
+  function cif(cell,h,k){ const arr=cell[k]; const H=clamp(h,0,cell.maxyr); const f=Math.floor(H), t=H-f; return f>=cell.maxyr?arr[cell.maxyr]:lerp(arr[f],arr[f+1],t); }
+  function cellAt(ageIdx,psaIdx){ return M.fine[M.ages[ageIdx]+'|'+M.psaBands[psaIdx]]; }
+  // interpolate across PSA (log scale) for a given age band
+  function psaInterp(ageIdx,psa,h,k){
+    const lr=M.psaRep.map(Math.log), lp=Math.log(clamp(psa,0.05,3.99));
+    const ys=[0,1,2].map(j=>cif(cellAt(ageIdx,j),h,k));
+    return pw(lr,ys,lp);
+  }
+  // interpolate across age (band midpoints) at fixed horizon
+  function cancerAll(age,psa,h,k){
+    const ys=[0,1,2,3].map(i=>psaInterp(i,psa,h,k));
+    return pw(M.mids,ys,age);
+  }
+  // ---- v0.7 joined model: cancer hazard integrated against HIS survival
+  // lam(cell,k): cause-specific ARPI hazard in follow-up year k (1-based) for a cell; beyond follow-up carry the mean of the last 3 years
+  // v0.12: trailing years with no ARPI start (after the cell's last observed start, few men left at risk) are treated as
+  // beyond follow-up rather than as a true zero hazard; extrapolation = mean of the last 3 years up to the last start.
+  const obsLen=a=>{ let e=a.length; while(e>0&&a[e-1]===0) e--; return e; };
+  const tailMean=a=>{ const e=obsLen(a), t=a.slice(Math.max(0,e-3),e); return t.reduce((x,y)=>x+y,0)/t.length; };
+  // v0.16 trial (M.extrap==='attainedAge'): beyond a cell's last observed year, take the hazard of the next older
+  // index-age cell (same PSA band) at the same attained age; the 80-84 cells (no older cell) keep the last-3-year mean.
+  function lamAttained(j,pb,k){ for(let i=j;i<M.ages.length;i++){ const b=M.haz[M.ages[i]+'|'+pb]; const kk=k-(M.mids[i]-M.mids[j]);
+      const e=obsLen(b); if(kk>=1&&kk<=e) return b[kk-1]; }
+    return tailMean(M.haz[M.ages[M.ages.length-1]+'|'+pb]); }
+  function lamCell(key,k){ const a=M.haz[key]; const e=M.zeroTail==='keep'?a.length:obsLen(a);
+    if(k<=e) return a[k-1];
+    if(M.extrap==='attainedAge'){ const [ag,pb]=key.split('|'); return lamAttained(M.ages.indexOf(ag),pb,k); } if(M.zeroTail==='keep'){ const t=a.slice(-3); return t.reduce((x,y)=>x+y,0)/t.length; } return tailMean(a); }
+  function lamAt(age,psa,k){
+    const lr=M.psaRep.map(Math.log), lp=Math.log(clamp(psa,0.05,3.99));
+    const ys=M.ages.map(ag=>pw(lr,M.psaBands.map(pb=>lamCell(ag+'|'+pb,k)),lp));
+    return pw(M.mids,ys,age)*psaCal(psa);
+  }
+  // v0.8.1: within-band PSA calibration from narrow 70-74 bands (multiplier on the 3-band interpolation)
+  function psaCal(psa){ const c=M.psaCal; if(!c) return 1; return pw(c.psa.map(Math.log),c.mult,Math.log(clamp(psa,0.05,3.99))); }
+  function cmult(health){ return 1; } // v0.22: no cancer risk-factor multipliers
+  // CIF of ARPI start by horizon h (years), using his own yearly death probability from the life table ^ HR
+  // v0.8: lag L (years) = lead-time window. Only ARPI starts in follow-up years k > L count (screening now cannot
+  // prevent advanced disease that surfaces within L years). fatalFn(ageAtARPI) = share of ARPI starts that end in
+  // prostate cancer death (relative survival vs life table); returns [F, D] = [ARPI CIF, fatal CIF].
+  function joinCIF(age,h,lamFn,hrv,mult,L,fatalFn){
+    L=L||0; let s=1,F=0,D=0; const n=Math.ceil(h-1e-9);
+    for(let k=1;k<=n;k++){
+      const frac=Math.min(1,h-(k-1));
+      const sPrev=survH(age,k-1,hrv), sNow=survH(age,k,hrv);
+      const q=1-sNow/sPrev, lam=Math.min(0.999,lamFn(k)*mult);
+      if(k>L){ const e=s*lam*frac; F+=e; if(fatalFn) D+=e*fatalFn(age+k-0.5); }
+      s*=(1-lam-q);
+      if(s<=0) break;
+    }
+    return fatalFn?[F,D]:F;
+  }
+  function fatalAt(a){ const f=M.fatal; return f?pw(f.ages,f.frac,a):0; }
+  function cancer(age,psa,health,h,L){
+    const hrv=hr(age,health), m=cmult(health);
+    const [pt,fat]=joinCIF(age,h,k=>lamAt(age,psa,k),hrv,m,L,fatalAt);
+    // uncertainty: carry the relative width of the measured cell CIFs at this horizon
+    const c=['pt','lo','hi'].map(key=>cancerAll(age,psa,h,key));
+    const out=[pt, c[0]>0?pt*c[1]/c[0]:pt, c[0]>0?pt*c[2]/c[0]:pt]; out.fatal=fat; return out;
+  }
+  // v0.10 horizon (M.horizon): 'lifetime' = rest of life (to age maxAge, survival makes the tail negligible), the same
+  // construct for patient and reference man, because stopping is a lifelong decision; 'to85' = v0.9 behaviour (sensitivity).
+  const HZ=Object.assign({mode:'to85',maxAge:110,refExt:'last3'},M.horizon||{});
+  // reference man: REF cell hazards (55-64, PSA<1, 20 y measured) against the average man's life table from age 60.
+  // Beyond the measured 20 y: 'last3' = mean of the last 3 measured years (same rule as the patient cells, primary);
+  // 'cell80' = the 80-84 PSA<1 cell's hazards by follow-up year (sensitivity).
+  const refLam=k=>{ const a=M.hazRef; if(k<=(M.zeroTail==='keep'?a.length:obsLen(a))) return a[k-1];
+    if(M.extrap==='attainedAge'){ for(let i=0;i<M.ages.length;i++){ const b=M.haz[M.ages[i]+'|<1'], kk=k-(M.mids[i]-60), e=obsLen(b); if(kk>=1&&kk<=e) return b[kk-1]; }
+      return tailMean(M.haz[M.ages[M.ages.length-1]+'|<1']); }
+    if(HZ.refExt==='cell80'){ const c=M.haz['80-84|<1']; const j=k-a.length; if(j<=c.length && c[j-1]>0) return c[j-1]; const t=c.filter(x=>x>0).slice(-3); return t.reduce((x,y)=>x+y,0)/t.length; }
+    if(M.zeroTail==='keep'){ const t=a.slice(-3); return t.reduce((x,y)=>x+y,0)/t.length; } return tailMean(a); };
+  const refYears=()=>HZ.mode==='lifetime'?HZ.maxAge-60:20;
+  // v0.12: the reference man is given the patient's own death-hazard multiplier (hrv) unless M.refMatch==='none'
+  // (then the average man, hrv = k). Health-matching keeps survival out of the cancer criterion: life expectancy is judged
+  // by the first criterion, so a long-lived healthy man is not credited with extra cancer risk merely for living longer.
+  const refCache={}; function refAt(L,hrv){ L=L||0; if(hrv==null||M.refMatch==='none') hrv=K(); const key=L+'|'+hrv;
+    if(!(key in refCache)) refCache[key]=joinCIF(60,refYears(),refLam,hrv,1,L,fatalAt); return refCache[key]; }
+  const refJoin = refAt(0)[0];
+  function horizon85(age){ return HZ.mode==='lifetime'?Math.max(0,HZ.maxAge-age):Math.max(0,85-age); }
+  // ---- provisional classification (thresholds adjustable; NOT validated)
+  function classify(le,r85,opt){
+    // v0.3: two outcomes. stop if life expectancy < cutoff OR remaining lethal-cancer risk <= reference man; else continue
+    const cancerLevel = r85 <= opt.anchor ? 'low' : 'above';
+    const lifeLevel = le < opt.leMin ? 'short' : 'sufficient';
+    const cat = (lifeLevel==='short' || cancerLevel==='low') ? 'stop' : 'continue';
+    // v0.21: how close the call was. `cat` is unchanged; this drives the borderline label only.
+    const MG=M.margin||{}, spread=MG.cancerSpread||1.32, leBand=MG.leBand||1.5;
+    const ratio=opt.anchor>0?r85/opt.anchor:1;
+    const nearCancer=Math.abs(Math.log(ratio))<=Math.log(spread);
+    const nearLife=Math.abs(le-opt.leMin)<=leBand;
+    const fireCanc=cancerLevel==='low', fireLife=lifeLevel==='short';
+    let border=false, band=[];
+    if(cat==='stop'){
+      const f=[]; if(fireCanc) f.push(['cancer',nearCancer]); if(fireLife) f.push(['life',nearLife]);
+      border=f.length>0 && f.every(x=>x[1]);
+      if(border) band=f.filter(x=>x[1]).map(x=>x[0]);
+    } else {
+      if(nearCancer) band.push('cancer');
+      if(nearLife) band.push('life');
+      border=band.length>0;
+    }
+    return {cat,cancerLevel,lifeLevel,border,band,ratio,nearCancer,nearLife};
+  }
+  function evaluate(age,psa,health,opt){
+    const le=lifeExp(age,health), d10=death(age,10,health), h=horizon85(age);
+    const L=opt.lag||0, c10=cancer(age,psa,health,10,0), c85all=cancer(age,psa,health,h,0), c85=cancer(age,psa,health,h,L);
+    const ref=refAt(L,hr(age,health)); opt={...opt,anchor:ref[0]};
+    const tnxAll10=pw(M.mids,M.tnxDeath10.all,age);
+    const w=pw(M.mids,M.atten,age);
+    const parts=Array.isArray(health)?health.filter(e=>item(e)).map(e=>({id:typeof e==='string'?e:e.id,label:item(e).label,hr:Math.exp(itemLH(e,age))})):[];
+    return {age,psa,tier:tierOf(health),le,d10,h,c10,c85,c85all,lag:L,anchor:ref[0],refFatal:ref[1],hr:hr(age,health),condHR:condHR(age,health),base:pw(M.mids,M.hr.clean||M.hr.healthy,age),parts,tnxAll10,...classify(le,c85[0],opt)};
+  }
+  return {condHR,evaluate,lifeExp,death,cancer,hr,l,horizon85,tierOf,refJoin,refAt,fatalAt,labMix,HZ};
+}
+if(typeof module!=='undefined') module.exports={makeModel};
+
+const model = makeModel(M);
+const $ = id => document.getElementById(id);
+const pct = (x,d=1) => (x*100).toFixed(d)+'%';
+const state = {age:72, psa:1.8};
+const presets = {
+  h72:{age:72,psa:1.8,checks:[]},
+  f72:{age:72,psa:1.8,checks:['h_hf','h_copd','h_af','h_ihd']},
+  m74:{age:74,psa:2.4,checks:["h_dm"]}
+};
+const groups=[['Cardiopulmonary and renal',['h_hf','h_copd','h_o2','h_ckd','h_esrd','h_af','h_ihd','h_pvd','h_cva','h_dm']],['Other serious illness',['h_mets','h_cirr','h_pd','h_dem']],['Function and nutrition',['h_wc','h_adl','h_maln','h_wl','h_bmi','h_alb']],['Other',['h_smk']]];
+(function buildChecks(){
+  let html='';
+  for(const [g,ids] of groups){ html+=`<div class="group-h">${g}</div>`; for(const id of ids){ html+=`<label><input type="checkbox" id="${id}"><span>${M.items[id].label}</span><span class="hrchip" id="c_${id}"></span></label>`; } }
+  $('checks').innerHTML=html;
+})();
+const custom=[]; const lv={low:1.15,med:1.40,high:1.90}; const lvName={low:'mild',med:'moderate',high:'severe'};
+//(v0.22: cancer risk-factor inputs removed)
+//(function buildK(){ $('kchecks').innerHTML=['k_hi','k_fh','k_bx','k_blk','k_5ari'].map(id=>`<label><input type="checkbox" id="${id}"><span>${M.citems[id].label}</span><span class="hrchip">×${M.citems[id].hr.toFixed(2)}</span></label>`).join(''); })();
+function items(){ return [...document.querySelectorAll('#checks input')].filter(b=>b.checked).map(b=>b.id).concat(custom.filter(c=>c.on)); }
+function drawCustom(){
+  $('cList').innerHTML=custom.map((c,i)=>`<label><input type="checkbox" data-ci="${i}" ${c.on?'checked':''}><span>${c.label.replace(/[<>&]/g,'')} <small>(${lvName[c.level]})</small></span><span class="hrchip">×${c.hr.toFixed(2)}</span><button type="button" class="rm" data-ri="${i}" aria-label="Remove">×</button></label>`).join('');
+  $('cList').querySelectorAll('input').forEach(el=>el.addEventListener('change',e=>{custom[+e.target.dataset.ci].on=e.target.checked;render();}));
+  $('cList').querySelectorAll('button.rm').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();custom.splice(+e.currentTarget.dataset.ri,1);drawCustom();render();}));
+}
+$('cAdd').addEventListener('click',()=>{ const name=($('cName').value||'').trim()||'Other condition'; const level=$('cImpact').value; custom.push({id:'custom'+custom.length+'_'+Date.now(),label:name,hr:lv[level],level,tier:'mod',on:true}); $('cName').value=''; drawCustom(); render(); });
+$('cName').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); $('cAdd').click(); } });
+function opts(){ const lag=Math.max(0,Math.round(+$('tLag').value||0)); return {anchor:model.refAt(lag)[0], leMin:+$('tLe').value||15, lag}; }
+const catText={continue:'Continue screening',stop:'Consider stopping'};
+function why(r,o){
+  const le=r.le.toFixed(1)+' years', rr=(r.c85[0]/o.anchor).toFixed(1)+'×';
+  if(r.cat==='stop' && r.lifeLevel==='short') return `Estimated life expectancy is ${le}, below the ${o.leMin}-year threshold. Men with less life expectancy than this are unlikely to live long enough to benefit from early detection.`;
+  if(r.cat==='stop') return `His metastatic cancer risk beyond the next ${o.lag} years (${pct(r.c85[0],2)}) is no higher than that of a low-risk reference man in the same health (${pct(o.anchor,2)}). Further testing is unlikely to change his outcome.`;
+  return `Life expectancy of ${le} exceeds the ${o.leMin}-year threshold, and his metastatic cancer risk beyond the next ${o.lag} years is ${rr} that of a low-risk reference man in the same health.`;
+}
+function render(){
+  const t=items();
+  const o=opts();
+  const psaOut = state.psa>=4;
+  $('psaNote').hidden=!psaOut;
+  if(psaOut){ $('psaNote').textContent='A PSA of 4 ng/mL or higher is outside this tool. It calls for diagnostic evaluation, not a stopping decision.'; }
+  const r=model.evaluate(state.age, Math.min(state.psa,3.99), t, o);
+  const w=model.evaluate(state.age,1,Object.keys(M.items),o).parts; for(const q of w){ const el=$('c_'+q.id); if(el) el.textContent='×'+q.hr.toFixed(2); }
+  o.anchor=r.anchor; // health-matched reference man for this patient
+  $('tierPill').textContent='×'+r.condHR.toFixed(2);
+  const v=$('verdict');
+  if(psaOut){ v.className='verdict v-out'; $('vPill').textContent='Outside range'; $('vWhy').textContent='Evaluate the elevated PSA according to guidelines.'; }
+  else { const ph=[]; if(r.band.indexOf('cancer')>=0) ph.push("his metastatic risk is within the model's own uncertainty of the comparison man's"); if(r.band.indexOf('life')>=0) ph.push('his life expectancy is within '+((o.margin&&o.margin.leBand)||1.5)+' years of the threshold');
+    const band=ph.length?' This is close to the line — '+ph.join(' and ')+' — so a difference this small is not a finding.':'';
+    v.className='verdict v-'+r.cat+(r.border?' v-border':''); $('vPill').textContent=(r.border?'Borderline: ':'')+catText[r.cat];
+    $('vWhy').textContent=why(r,o)+band+(r.condHR>6?' Several serious conditions are combined; their hazard ratios multiply, so this estimate is less certain.':''); }
+  $('le').innerHTML=r.le.toFixed(1)+' <small>years</small>';
+  $('leLevel').className='level lv-'+r.lifeLevel; $('leLevel').textContent=r.lifeLevel==='short'?`Below the ${o.leMin}-year threshold`:`Above the ${o.leMin}-year threshold`;
+  $('d10').textContent=pct(r.d10);
+  $('hr').textContent=r.hr.toFixed(2)+'×';
+  $('ltle').textContent=model.lifeExp(state.age,'middle').toFixed(1)+' y';
+  const approx=x=>{ const p=x*100, v=p<1?Math.round(p*10)/10:Math.round(p*2)/2; return 'about '+(Number.isInteger(v)?v.toFixed(0):v.toFixed(1))+'%'; };
+  $('r85').textContent=approx(r.c85[0]);
+  $('refabs').textContent=approx(o.anchor);
+  $('rfat').textContent=approx(r.c85all.fatal);
+  $('lagN').textContent=o.lag;
+  $('cLevel').className='level lv-'+r.cancerLevel; $('cLevel').textContent=r.cancerLevel==='low'?'At or below low-risk reference':'Above low-risk reference';
+  $('xref').innerHTML=(r.c85[0]/o.anchor).toFixed(2)+'× <small>the reference</small>';
+  const kf=[];
+  const hm=model.evaluate(state.age,Math.min(state.psa,3.99),kf,o);
+  gauge('leGauge',0,25,r.le,hm.le,o.leMin,'y',v=>v.toFixed(0)+(v===25?'+ y':''),`threshold ${o.leMin} y`,psaOut,[0,5,15,20,25]);
+  const rat=r.c85[0]/o.anchor, cmax=Math.max(2,Math.ceil(rat+0.25)); gauge('cGauge',0,cmax,rat,null,1,'×',v=>v.toFixed(0)+'×','low-risk reference (1×)',psaOut,[...Array(cmax+1).keys()]);
+  drawMap(r,t,o,psaOut);
+}
+
+function gauge(id,lo,hi,val,healthy,cut,unit,fmt,cutLab,hide,ticks){
+  const css=getComputedStyle(document.documentElement), c=n=>css.getPropertyValue(n).trim();
+  const L=8,R=312,x=v=>L+(Math.min(Math.max(v,lo),hi)-lo)/(hi-lo)*(R-L), y0=22,h=10;
+  let s=`<rect x="${L}" y="${y0}" width="${x(cut)-L}" height="${h}" rx="3" fill="${c('--stop-soft')}"/><rect x="${x(cut)}" y="${y0}" width="${R-x(cut)}" height="${h}" rx="3" fill="${c('--go-soft')}"/>`;
+  s+=`<line x1="${x(cut)}" x2="${x(cut)}" y1="${y0-6}" y2="${y0+h+4}" stroke="${c('--stop')}" stroke-width="2"/><text x="${x(cut)}" y="${y0-9}" text-anchor="middle">${cutLab}</text>`;
+  for(const t of ticks) s+=`<text x="${x(t)}" y="${y0+h+16}" text-anchor="${t===lo?'start':t===hi?'end':'middle'}">${fmt(t)}</text>`;
+  if(!hide){
+    s+=`<circle cx="${x(val)}" cy="${y0+h/2}" r="7" fill="${c('--accent')}" stroke="${c('--panel')}" stroke-width="2.5"><title>This patient</title></circle>`;
+  }
+  $(id).innerHTML=s;
+}
+function drawMap(r,t,o,psaOut){
+  const W=640,H=360,L=56,R=16,T=14,B=44, X0=0,X1=25, Y0=0;
+  const rr=q=>q.c85[0]/q.anchor;
+  let Y1=2.0; for(let a=65;a<=84.9;a+=0.5){ Y1=Math.max(Y1,rr(model.evaluate(a,Math.min(state.psa,3.99),t,o))+0.15); } Y1=Math.ceil(Y1*2)/2;
+  const x=v=>L+(Math.min(Math.max(v,X0),X1)-X0)/(X1-X0)*(W-L-R);
+  const y=v=>H-B-(Math.min(Math.max(v,Y0),Y1)-Y0)/(Y1-Y0)*(H-T-B);
+  const A=1;
+  const css=getComputedStyle(document.documentElement), c=n=>css.getPropertyValue(n).trim();
+  let s='';
+  const rect=(x1,y1,x2,y2,fill)=>`<rect x="${x(x1)}" y="${y(y2)}" width="${x(x2)-x(x1)}" height="${y(y1)-y(y2)}" fill="${fill}"/>`;
+  s+=rect(X0,Y0,X1,Y1,c('--go-soft'));
+  s+=rect(X0,Y0,o.leMin,Y1,c('--stop-soft'));
+  s+=rect(o.leMin,Y0,X1,A,c('--stop-soft'));
+  for(let v=0;v<=25;v+=5){ s+=`<line class="tick" x1="${x(v)}" x2="${x(v)}" y1="${T}" y2="${H-B}" stroke-dasharray="2 4"/><text x="${x(v)}" y="${H-B+16}" text-anchor="middle">${v}</text>`; }
+  for(let v=0;v<=Y1+1e-9;v+=(Y1>4?1:0.5)){ s+=`<line class="tick" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke-dasharray="2 4"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end">${v.toFixed(1)}×</text>`; }
+  s+=`<line class="axis" x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}"/><line class="axis" x1="${L}" x2="${L}" y1="${T}" y2="${H-B}"/>`;
+  s+=`<text x="${(L+W-R)/2}" y="${H-8}" text-anchor="middle">Estimated life expectancy (years)</text>`;
+  s+=`<text transform="translate(14 ${(T+H-B)/2}) rotate(-90)" text-anchor="middle">Metastatic risk vs. low-risk reference</text>`;
+  s+=`<line x1="${L}" x2="${W-R}" y1="${y(A)}" y2="${y(A)}" stroke="${c('--stop')}" stroke-width="1"/><text x="${L+6}" y="${y(A)-5}" text-anchor="start">low-risk reference (1×)</text>`;
+  const kf=[];
+  const pts=[]; for(let a=65;a<=84.9;a+=0.5){ const q=model.evaluate(a,Math.min(state.psa,3.99),t,o); pts.push([x(q.le),y(rr(q)),a]); }
+  s+=`<polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${c('--accent')}" stroke-width="1.6" stroke-opacity=".7"/>`;
+  for(const p of pts){ if([65,70,75,80].includes(p[2])) s+=`<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="${c('--accent')}"/><text x="${p[0]+6}" y="${p[1]-6}">${p[2]}</text>`; }
+  if(!psaOut){ s+=`<circle class="dot" cx="${x(r.le)}" cy="${y(r.c85[0]/r.anchor)}" r="7" fill="${c('--accent')}" stroke="${c('--panel')}" stroke-width="2.5"/>`; }
+  $('map').innerHTML=s;
+}
+function setAge(v){ v=Math.min(84.9,Math.max(65,+v||72)); state.age=v; $('age').value=v; $('ageR').value=v; render(); }
+function setPsa(v){ v=Math.max(0,+v); if(isNaN(v)) v=1.8; state.psa=v; $('psa').value=v; $('psaR').value=Math.min(v,3.99); render(); }
+$('ageR').addEventListener('input',e=>setAge(e.target.value));
+$('age').addEventListener('change',e=>setAge(e.target.value));
+$('psaR').addEventListener('input',e=>setPsa(e.target.value));
+$('psa').addEventListener('change',e=>setPsa(e.target.value));
+document.querySelectorAll('#checks input,#tLe,#tLag').forEach(el=>el.addEventListener('change',render));
+function syncSeg(){ const v=+$('tLe').value; document.querySelectorAll('.seg-b').forEach(b=>{const on=+b.dataset.le===v; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on);}); }
+document.querySelectorAll('.seg-b').forEach(b=>b.addEventListener('click',()=>{ $('tLe').value=b.dataset.le; syncSeg(); render(); }));
+$('tLe').addEventListener('change',syncSeg);
+function openM(){ const h=location.hash; if(h&&h.startsWith('#m')){ $('mdet').open=true; const el=document.querySelector(h); if(el) el.scrollIntoView(); } }
+window.addEventListener('hashchange',openM); openM();
+document.querySelectorAll('.mdet [open] .mhint').forEach(()=>{});
+$('mdet').addEventListener('toggle',()=>{ const s=document.querySelector('.mhint'); s.textContent=$('mdet').open?'Hide detailed methods':'Show detailed methods'; });
+document.querySelectorAll('button.preset[data-p]').forEach(b=>b.addEventListener('click',()=>{
+  const p=presets[b.dataset.p];
+  document.querySelectorAll('#checks input').forEach(c=>c.checked=p.checks.includes(c.id));
+  state.age=p.age; state.psa=p.psa; $('age').value=p.age; $('ageR').value=p.age; $('psa').value=p.psa; $('psaR').value=p.psa; render();
+}));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',render);
+new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+$('age').value=state.age; $('ageR').value=state.age; $('psa').value=state.psa; $('psaR').value=state.psa;
+render();
+</script>
+
+</body></html>
