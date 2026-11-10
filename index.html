@@ -88,6 +88,7 @@ button.preset:hover{border-color:var(--accent)}
 .verdict.v-border{border:2px dashed var(--accent)}
 .v-border .pill{font-size:18px}
 .why{font-size:14.5px;margin:0}
+.gnote{font-size:13.5px;margin:10px 0 0;padding:8px 12px;border-left:3px solid var(--warn-ink);background:var(--warn-bg);color:var(--ink);border-radius:0 6px 6px 0}
 .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .cards > .panel{align-content:start;padding:14px}
 @media (max-width:560px){.cards{grid-template-columns:minmax(0,1fr)}}
@@ -219,6 +220,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
         <div class="seg" role="group" aria-label="Life-expectancy threshold"><span class="seg-l">Life-expectancy threshold</span><span class="seg-bs"><button type="button" class="seg-b on" data-le="15" aria-pressed="true">15 y (EAU)</button><button type="button" class="seg-b" data-le="10" aria-pressed="false">10 y (ACS/NCCN)</button></span></div>
       </div>
       <div class="verdict" id="verdict" aria-live="polite"><span class="pill" id="vPill">—</span><p class="why" id="vWhy"></p></div>
+      <p class="gnote" id="gNote" hidden></p>
 
       <div class="cards">
         <div class="panel">
@@ -294,6 +296,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
         </ul>
         <p>A result is marked borderline when the deciding criterion is within the model's uncertainty: a patient-to-reference ratio within a factor of 1.37 either way (the median 95% uncertainty from 1,000 simulations varying every measured input), or life expectancy within 1.5 years of the threshold. The recommendation itself does not change.</p>
         <p>Otherwise the result is to continue screening.</p>
+        <p>The result can depart from guideline defaults, and the page says so when it does. For men 70 and older told to continue, it notes that the USPSTF recommends against screening at that age (grade D)<sup class="r">13</sup> while the AUA/SUO guideline allows an individualized decision (Statement 7)<sup class="r">3</sup>. For men under 70 told they can stop, it notes that the AUA/SUO guideline recommends offering screening every 2 to 4 years at ages 50 to 69 (Statement 6) and the USPSTF calls screening an individual decision (grade C). When Black race or family history is ticked and the result is to stop, it notes that these are higher-risk groups in the AUA/SUO guideline (Statement 5).</p>
 
         <h3 id="m-data">Data source</h3>
         <p>All inputs come from the TriNetX research network: electronic health records from about 125 health-care organizations, mostly US academic systems, accessed as aggregate counts, survival curves and model coefficients only (no patient-level data). Each cohort was defined as men with a PSA in the target age and value range, an earlier PSA at least 6 months before, no prior prostate cancer diagnosis or recorded treatment for it, and a health-system visit at least 1 year before the index PSA. Analyses were run in October 2026.</p>
@@ -375,6 +378,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
           <li>Buzzoni C, Auvinen A, Roobol MJ, et al. Metastatic prostate cancer incidence and prostate-specific antigen testing: new insights from the European Randomized Study of Screening for Prostate Cancer. Eur Urol. 2015;68(5):885–90.</li>
           <li>Finne P, et al. Eur J Cancer. 2010;46:3102.</li>
           <li>Walter LC, Bertenthal D, Lindquist K, Konety BR. PSA screening among elderly men with limited life expectancies. JAMA. 2006;296(19):2336–42.</li>
+          <li>US Preventive Services Task Force. Screening for prostate cancer: US Preventive Services Task Force recommendation statement. JAMA. 2018;319(18):1901–13.</li>
         </ol>
       </div>
     </div>
@@ -615,6 +619,12 @@ function render(){
     const band=ph.length?' However, this result is '+ph.join(' and ')+', and therefore should be interpreted cautiously.':'';
     v.className='verdict v-'+r.cat+(r.border?' v-border':''); $('vPill').textContent=(r.border?'Borderline: ':'')+catText[r.cat];
     $('vWhy').textContent=why(r,o)+band+(r.condHR>6?' Several serious conditions are combined; their hazard ratios multiply, so this estimate is less certain.':''); }
+  // v1.1: say when the result departs from guideline defaults
+  { const g=[]; const kr=['k_fh','k_blk'].filter(id=>$(id)&&$(id).checked);
+    if(!psaOut&&r.cat==='continue'&&state.age>=70) g.push('Guidelines differ for men 70 and older: the USPSTF recommends against PSA screening at this age (grade D, 2018; an update is in progress), while the AUA/SUO guideline allows clinicians to continue, lengthen the interval or stop based on PSA, risk, life expectancy and patient preference (Statement 7).');
+    if(!psaOut&&r.cat==='stop'&&state.age<70) g.push('Below age 70 the AUA/SUO guideline recommends offering screening every 2 to 4 years (Statement 6, strong recommendation) and the USPSTF calls it an individual decision (grade C). The AUA/SUO guideline allows stopping or a longer interval based on PSA, risk and life expectancy (Statement 7), so this should be a shared decision.');
+    if(!psaOut&&r.cat==='stop'&&kr.length) g.push('Black race and family history are higher-risk groups in the AUA/SUO guideline (Statement 5). Their effect is included in this estimate, but a strong family history (several relatives, or diagnosis at a young age) is not captured.');
+    $('gNote').hidden=!g.length; $('gNote').textContent=g.join(' '); }
   $('le').innerHTML=r.le.toFixed(1)+' <small>years</small>';
   $('leLevel').className='level lv-'+r.lifeLevel; $('leLevel').textContent=r.lifeLevel==='short'?`Below the ${o.leMin}-year threshold`:`Above the ${o.leMin}-year threshold`;
   $('d10').textContent=pct(r.d10);
