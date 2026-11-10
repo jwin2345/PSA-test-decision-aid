@@ -156,7 +156,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
     <p class="sub">Estimates life expectancy and risk of metastatic prostate cancer for a man aged 65–84 who is already being screened, and indicates whether stopping PSA screening is reasonable.</p>
     <ul class="meta">
       <li><b>Inclusion criteria:</b> men 65–84, PSA below 4 ng/mL, at least one prior PSA, no prostate cancer diagnosis</li>
-      <li><b>Exclusion criteria:</b> symptoms, abnormal DRE, PSA 4 ng/mL or higher (doubled if on a 5-ARI), known germline variant</li>
+      <li><b>Exclusion criteria:</b> symptoms, abnormal DRE, PSA 4 ng/mL or higher (doubled if on a 5-ARI), rising PSA, known germline variant</li>
       <li><b>Built from:</b> TriNetX health-system records and the US life table</li>
     </ul>
     <div class="status" role="note"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="7.25" y="4" width="1.5" height="5.5" rx=".7" fill="currentColor"/><circle cx="8" cy="11.6" r=".95" fill="currentColor"/></svg><span><b>Research use only.</b> This tool has not yet been validated in individual patient data and should not be the sole basis for a screening decision. Use it to support shared decision-making.</span></div>
@@ -286,7 +286,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
       </nav>
       <div class="mtext">
         <h3 id="m-use">Intended use</h3>
-        <p>The tool is for men aged 65 to 84 who are already in a PSA screening pattern: at least one earlier PSA, a current PSA below 4 ng/mL, and no diagnosis of prostate cancer. It is not for men with urinary or bone symptoms, an abnormal digital rectal examination, or a PSA of 4 ng/mL or higher, who need diagnostic evaluation rather than a screening decision. For men taking finasteride or dutasteride the entered PSA is doubled, and the 4 ng/mL limit applies to the doubled value. It is not for men with a known germline variant associated with prostate cancer (for example BRCA2). Its output is meant to inform a shared decision; it does not replace clinical judgment or patient preference.</p>
+        <p>The tool is for men aged 65 to 84 who are already in a PSA screening pattern: at least one earlier PSA, a current PSA below 4 ng/mL, and no diagnosis of prostate cancer. It is not for men with urinary or bone symptoms, an abnormal digital rectal examination, or a PSA of 4 ng/mL or higher, who need diagnostic evaluation rather than a screening decision. It is also not for men whose PSA is rising on repeat tests, since PSA history is not an input and a rising PSA is a reason to keep testing. For men taking finasteride or dutasteride the entered PSA is doubled, and the 4 ng/mL limit applies to the doubled value. It is not for men with a known germline variant associated with prostate cancer (for example BRCA2). Its output is meant to inform a shared decision; it does not replace clinical judgment or patient preference.</p>
 
         <h3 id="m-rule">Decision rule</h3>
         <p>Guidelines tie stopping screening to age (USPSTF: 70) or to life expectancy. The tool estimates the two quantities that age stands in for and applies two tests.</p>
@@ -294,7 +294,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
           <li><b>Life expectancy.</b> Consider stopping if estimated life expectancy is below 15 years. The European Association of Urology gives a strong recommendation that men with less than 15 years are unlikely to benefit from early diagnosis<sup class="r">1</sup>. The threshold can be lowered to 10 years, the American Cancer Society and NCCN position<sup class="r">2</sup>. The current AUA/SUO guideline lists life expectancy as one factor in shared decision-making without a numeric threshold<sup class="r">3</sup>.</li>
           <li><b>Metastatic cancer risk.</b> Consider stopping if his lifetime risk of metastatic prostate cancer after a 4-year lag is no higher than that of a low-risk reference man: a 60-year-old with PSA below 1 ng/mL, the group the Malmö cohort identified as able to stop or test rarely<sup class="r">4</sup>. The reference man is given the patient's own comorbidity, so the comparison reflects cancer risk at equal health; life expectancy is judged by the first test alone.</li>
         </ul>
-        <p>A result is marked borderline when the deciding criterion is within the model's uncertainty: a patient-to-reference ratio within a factor of 1.37 either way (the median 95% uncertainty from 1,000 simulations varying every measured input), or life expectancy within 1.5 years of the threshold. The recommendation itself does not change.</p>
+        <p>A result is marked borderline when the deciding criterion is within the model's uncertainty: a patient-to-reference ratio within a factor of 1.37 either way (the median 95% uncertainty from 1,000 simulations varying every measured input), or life expectancy within 1.5 years of the threshold. A borderline result is shown as "Consider a longer interval": repeat PSA every 2 to 4 years rather than stopping or continuing at the usual interval, an option the AUA/SUO guideline allows (Statement 7)<sup class="r">3</sup>. The text still says which way the model leans.</p>
         <p>Otherwise the result is to continue screening.</p>
         <p>The result can depart from guideline defaults, and the page says so when it does. For men 70 and older told to continue, it notes that the USPSTF recommends against screening at that age (grade D)<sup class="r">13</sup> while the AUA/SUO guideline allows an individualized decision (Statement 7)<sup class="r">3</sup>. For men under 70 told they can stop, it notes that the AUA/SUO guideline recommends offering screening every 2 to 4 years at ages 50 to 69 (Statement 6) and the USPSTF calls screening an individual decision (grade C). When Black race or family history is ticked and the result is to stop, it notes that these are higher-risk groups in the AUA/SUO guideline (Statement 5).</p>
 
@@ -616,8 +616,8 @@ function render(){
   const v=$('verdict');
   if(psaOut){ v.className='verdict v-out'; $('vPill').textContent='Outside range'; $('vWhy').textContent='Evaluate the elevated PSA according to guidelines.'; }
   else { const ph=[]; if(r.band.indexOf('cancer')>=0) ph.push("within the model's uncertainty of the comparison"); if(r.band.indexOf('life')>=0) ph.push('within '+((o.margin&&o.margin.leBand)||1.5)+' years of the life-expectancy threshold');
-    const band=ph.length?' However, this result is '+ph.join(' and ')+', and therefore should be interpreted cautiously.':'';
-    v.className='verdict v-'+r.cat+(r.border?' v-border':''); $('vPill').textContent=(r.border?'Borderline: ':'')+catText[r.cat];
+    const band=ph.length?' However, this result is '+ph.join(' and ')+'. Because the call is close, testing less often (every 2 to 4 years) is a reasonable middle course; the model leans toward '+(r.cat==='stop'?'stopping':'continuing')+'.':'';
+    v.className='verdict v-'+r.cat+(r.border?' v-border':''); $('vPill').textContent=r.border?'Consider a longer interval':catText[r.cat];
     $('vWhy').textContent=why(r,o)+band+(r.condHR>6?' Several serious conditions are combined; their hazard ratios multiply, so this estimate is less certain.':''); }
   // v1.1: say when the result departs from guideline defaults
   { const g=[]; const kr=['k_fh','k_blk'].filter(id=>$(id)&&$(id).checked);
