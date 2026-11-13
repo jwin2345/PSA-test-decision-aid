@@ -790,20 +790,15 @@ $('age').value=state.age; $('ageR').value=state.age; $('psa').value=state.psa; $
 render();
 </script>
 
-<!-- Terms gate: the tool stays blocked until the user ticks the agreement. Acceptance is remembered in this browser
-     for TERMS_VERSION; change the version when the Terms change so everyone is asked again. -->
+<!-- Terms gate: the tool stays blocked until the user ticks the agreement. Shown on every page load (acceptance is not remembered). -->
 <script>
 (function(){
-  const TERMS_VERSION='2026-11-13', KEY='psa-ss-terms-accepted';
   const gate=document.getElementById('gate'), box=document.getElementById('gateAgree'), go=document.getElementById('gateGo'), wrap=document.querySelector('.wrap');
-  let ok=false; try{ ok=localStorage.getItem(KEY)===TERMS_VERSION; }catch(e){}
-  if(ok) return;
   gate.hidden=false; wrap.inert=true; wrap.setAttribute('aria-hidden','true'); document.body.style.overflow='hidden';
   setTimeout(()=>box.focus(),0);
   box.addEventListener('change',()=>{ go.disabled=!box.checked; });
   go.addEventListener('click',()=>{
     if(!box.checked) return;
-    try{ localStorage.setItem(KEY,TERMS_VERSION); }catch(e){}
     gate.hidden=true; wrap.inert=false; wrap.removeAttribute('aria-hidden'); document.body.style.overflow='';
     if(window.goatcounter&&window.goatcounter.count) window.goatcounter.count({path:'terms-accepted',title:'Terms accepted',event:true});
   });
