@@ -180,7 +180,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
   <header class="mast">
     <div class="mast-top">
       <h1>PSA Screening Decision Tool</h1>
-      <span class="ver">Version 1.1</span>
+      <span class="ver">Version 1.2</span>
     </div>
     <p class="sub">Estimates life expectancy and risk of metastatic prostate cancer for a man aged 65–84 who is already being screened, and indicates whether stopping PSA screening is reasonable.</p>
     <ul class="meta">
@@ -276,6 +276,14 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
         </div>
       </div>
 
+      <div class="panel" id="odPanel">
+        <div class="card-h"><span class="lbl">Overdiagnosis</span><h3>If testing finds a prostate cancer that would not cause symptoms or shorten lifespan:</h3></div>
+        <div class="big" id="odBig">—</div>
+        <p class="why" style="margin:4px 0 8px">That is <b id="odIn10">—</b> cancers found by testing in men of his age and health that would never have caused symptoms or shortened his life.</p>
+        <div class="row" style="margin:0 0 8px"><label for="odLead" class="note" style="white-space:nowrap">Lead time</label><input type="range" id="odLead" min="5" max="13" step="1" value="9" aria-label="Lead time slider"><span class="unit" id="odLeadV" style="white-space:nowrap">9 years</span></div>
+        <p class="note">Lead time is how much earlier testing finds a cancer than symptoms would have (median). It is uncertain: the CAP trial implies about 9 years, and other estimates are shorter or longer. A longer lead time means more overdiagnosis. This is different from the lag before screening benefit, which applies to the aggressive cancers that cause metastases; slow-growing cancers have much longer lead times. This estimate describes diagnosis, not treatment: many of these cancers are low grade and can be monitored with active surveillance instead of treated. See <a href="#m-od">Methods</a> for more details.</p>
+      </div>
+
       <div>
         <div class="lbl" style="margin-bottom:6px">Life expectancy and metastatic risk, ages 65–84</div>
         <div class="chartbox"><svg id="map" viewBox="0 0 640 360" width="100%" role="img" aria-label="Life expectancy plotted against metastatic risk relative to the low-risk reference, with continue and stop regions"></svg></div>
@@ -308,6 +316,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
         <a href="#m-le">Life expectancy</a>
         <a href="#m-ca">Metastatic cancer risk</a>
         <a href="#m-rf">Risk factors</a>
+        <a href="#m-od">Overdiagnosis</a>
         <a href="#m-check">Checks</a>
         <a href="#m-lim">Limitations</a>
         <a href="#m-ai">AI use</a>
@@ -371,11 +380,30 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
         <p><b>5-α-reductase inhibitors.</b> Finasteride and dutasteride lower PSA by about half, and doubling the measured value is the usual correction, so for men taking them the entered PSA is doubled before it is used, and the 4 ng/mL limit applies to the doubled value. In the same Cox model, 5-α-reductase inhibitor use raised the ARPI rate at the same measured PSA (hazard ratio 1.37; 1.13–1.65), consistent with the measured PSA understating risk. It is included in the model as an adjustment but not used as a multiplier, to avoid counting it twice.</p>
         <p>Not inputs: known germline variants (for example BRCA2), which place a man outside this tool; PSA velocity; MRI, PSA density and DRE findings.</p>
 
-<h3 id="m-check">Checks</h3>
+<h3 id="m-od">Overdiagnosis</h3>
+        <p>A cancer is overdiagnosed if testing finds it but, without testing, it would not have been diagnosed in the man's lifetime. The tool estimates the share of cancers found by testing that are overdiagnosed, using the method and data of the CAP trial analysis<sup class="r">14</sup>, in four steps.</p>
+        <ol>
+          <li><b>Lead time.</b> Testing finds a cancer earlier than symptoms would have. In CAP (189,386 men offered a single PSA test and followed for 15 years), the chance that a cancer found by testing would still not have been diagnosed without testing was 100% at 3 years, 80% at 5 years, 40% at 10 years and 12% at 15 years, a median lead time of about 9 years (8.75). The tool interpolates linearly between these points; call this E(t).</li>
+          <li><b>His chance of dying.</b> D(t), his probability of dying of any cause within t years, comes from the same survival model as the life-expectancy estimate, including the tested-men factor and his conditions.</li>
+          <li><b>Combining them.</b> A cancer that would have come to light in year t is overdiagnosed if he has already died by then. The tool takes, for each short interval over the next 15 years, the share of cancers that would have come to light in it, E(t) − E(t + Δt), multiplies it by D(t), and adds these up. Cancers still undiagnosed at 15 years (12%) are counted as overdiagnosed, as in CAP. In symbols: overdiagnosed share = E(15) + Σ [E(t) − E(t + Δt)] × D(t).</li>
+          <li><b>Lead time slider.</b> Lead time is uncertain, and model-based estimates vary with method and setting<sup class="r">15</sup>. The user can set the median lead time from 5 to 13 years (default 9). The CAP curve keeps its shape and is stretched or compressed in time to match, so a longer lead time leaves more cancers undiagnosed at each point and gives more overdiagnosis. Lead time is separate from the lag before screening benefit used for metastatic risk (see Decision rule): lead time describes all cancers found by testing, most of which grow slowly, whereas the benefit lag reflects the aggressive cancers that cause metastases, which have shorter lead times.</li>
+        </ol>
+        <p>For example, for a 72-year-old with no listed conditions at the default 9-year lead time, about 14 percentage points of the 23% are cancers still undiagnosed at 15 years and about 9 are cancers that would have surfaced only after his death from another cause. Older or sicker men die sooner, so more of their cancers fall in the second group. As a check, the method applied to the CAP curve as published and the US life table without the tested-men factor gives 33% at age 70 and 57% at 80, against 32% and 58% in the CAP analysis.</p>
+        <p>The share depends on age and health only. PSA changes how likely a cancer is to be found, not the share of found cancers that are overdiagnosed, so PSA enters through the metastatic-risk estimate instead. The share is shown for information and is not part of the decision rule. The number of overdiagnoses per 1,000 men tested is not shown, because the available coded data cannot separate cancers found by screening from those found after symptoms.</p>
+
+        <h3 id="m-check">Checks</h3>
         <ul>
           <li><b>Death-model calibration.</b> In 13 cohorts of men with specified conditions at ages 70–79, chosen before outcomes were seen, the calibration slope for predicted against observed 10-year death was 0.87 (95% CI, 0.79–0.96), fitted through the origin, and observed/expected deaths were 0.95 (95% CI, 0.93–0.98). These cohorts also informed model development, so this is not an independent validation.</li>
           <li><b>Metastatic disease in men with comorbidities.</b> In the same cohorts, coded metastatic prostate cancer was 0.72 times (95% CI, 0.67–0.78) the rate expected relative to men with no conditions, so the tool may overstate cancer risk in men with comorbidities by about a quarter (fewer diagnoses may also reflect less investigation). Applying this factor changes 443 of 4,680 example recommendations, all toward stopping; the tool does not apply it.</li>
           <li><b>Comparison with an age-70 cutoff.</b> Across the same 4,680 examples the tool and a rule of screening to 70 disagree in 22.7%: 40.0% of examples under 70 would be told they can stop, and 17.0% of examples aged 70 or older would be told to continue.</li>
+        </ul>
+        <p><b>External comparisons.</b> These compare the tool with published estimates that use different populations and criteria, so they show agreement or disagreement, not validation.</p>
+        <ul>
+          <li><b>Life expectancy, CISNET.</b> Without the tested-men factor, the average man's life expectancy is 16.0, 12.0 and 9.6 years at ages 68, 74 and 78, against 15.7, 11.9 and 9.6 in the CISNET comorbidity analysis<sup class="r">16</sup>. With the factor, as the tool is used, it is 19.8, 14.9 and 12.0 years. Men with no listed conditions are estimated to live longer than CISNET's no-comorbidity group (25.5, 19.7 and 16.5 years against 16.6, 13.1 and 10.7), partly because of the tested-men factor and partly because the tool's group is narrower (about a quarter of tested men, against 69% in CISNET).</li>
+          <li><b>Stopping ages, CISNET.</b> The age at which life expectancy falls below 15 years is 80.5 with no listed conditions, 77.5 with diabetes alone, 75.0 with COPD alone and 71.2 with heart failure and COPD. CISNET's ages at which harms and benefits balance are 76 with no comorbidity, 72 with moderate comorbidity (such as diabetes) and 66 with severe comorbidity (such as COPD or heart failure)<sup class="r">16</sup>. Without the tested-men factor, the tool's ages are 75.7, 73.3, 70.6 and 66.7, close to CISNET's except for COPD alone, which CISNET groups with men who have several severe conditions. The tool therefore recommends screening about 4 to 9 years longer than CISNET, mainly because of the tested-men factor.</li>
+          <li><b>Tested-men factor.</b> In Medicare, men who had a screening PSA lived longer than unscreened men with the same life expectancy based on age and comorbidity (hazard ratio for death without screening, 1.23)<sup class="r">7</sup>. The tool's factor points the same way but is larger (hazard ratio for tested against never-tested men, 0.43 at age 67 and 0.53 at 77), possibly because its comparison group had never been tested at all.</li>
+          <li><b>Reference man's metastatic risk, Malmö.</b> The reference man has a 1.5% risk of metastatic prostate cancer by age 85, against 0.5% in the Malmö cohort<sup class="r">4</sup> (see Limitations). The tool's decisions use the ratio to the reference man, not this absolute risk.</li>
+          <li><b>Overdiagnosis, CAP.</b> Applied to the CAP lead-time curve and the US life table without the tested-men factor, the overdiagnosis method gives 33% at age 70 and 57% at 80, against 32% and 58% in the CAP analysis<sup class="r">14</sup>.</li>
         </ul>
 
         <h3 id="m-lim">Limitations</h3>
@@ -387,6 +415,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
           <li>The timing of metastatic diagnoses and the PSA refinement within bands come from ARPI starts. If metastases occur 1–3 years earlier, fewer than 100 of 4,680 example recommendations change, all toward stopping; removing the PSA refinement changes 213. Measuring metastatic timing directly is not possible in TriNetX's aggregate tools, which cannot time a combined outcome (a prostate cancer code together with a metastasis code) or give event-free person-time; it is planned in patient-level data.</li>
           <li>Part of the lifetime risk, including about half of the reference man's, lies beyond measured follow-up and is extrapolated. PSA values below 0.6 or above about 3.5 ng/mL are treated as the nearest measured band.</li>
           <li>The prostate cancer risk-factor hazard ratios were measured for first ARPI prescription and are assumed to change metastatic risk by the same relative amount. Their confidence intervals are wide for family history and prior biopsy, family history is under-recorded in diagnosis codes, and a biopsy is assumed to have shown no cancer when no cancer was coded.</li>
+          <li>The overdiagnosis lead-time curve comes from a single UK screening round with a PSA threshold of 3 ng/mL and is assumed to apply at every PSA level and grade; changing the lead time stretches the curve without changing its shape. It counts low-grade cancers managed with active surveillance as overdiagnosed, even though they are not treated.</li>
           <li>MRI, PSA density, grade history and DRE findings are not inputs.</li>
         </ul>
 
@@ -408,13 +437,16 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
           <li>Finne P, et al. Eur J Cancer. 2010;46:3102.</li>
           <li>Walter LC, Bertenthal D, Lindquist K, Konety BR. PSA screening among elderly men with limited life expectancies. JAMA. 2006;296(19):2336–42.</li>
           <li>US Preventive Services Task Force. Screening for prostate cancer: US Preventive Services Task Force recommendation statement. JAMA. 2018;319(18):1901–13.</li>
+          <li>Brentnall AR, Rebolj M, Sasieni P, Funston G, Gabe R, Vickers AJ. Evaluating the impact of age on prostate cancer overdiagnosis using long-term follow-up from the CAP randomised trial. Int J Cancer. 2026;159(5):1196–1203. doi:10.1002/ijc.70492.</li>
+          <li>Draisma G, Etzioni R, Tsodikov A, et al. Lead time and overdiagnosis in prostate-specific antigen screening: importance of methods and context. J Natl Cancer Inst. 2009;101(6):374–83.</li>
+          <li>Lansdorp-Vogelaar I, Gulati R, Mariotto AB, et al. Personalizing age of cancer screening cessation based on comorbid conditions: model estimates of harms and benefits. Ann Intern Med. 2014;161(2):104–12. doi:10.7326/M13-2867.</li>
         </ol>
       </div>
     </div>
     </details>
   </section>
 
-  <footer><span>PSA Screening Decision Tool · version 1.1 · November 2026 · © 2026 University of Rochester. All rights reserved.</span><span>Estimates only; not a substitute for clinical judgment.</span><span><a href="terms.html" style="color:inherit">Terms of Use</a></span></footer>
+  <footer><span>PSA Screening Decision Tool · version 1.2 · November 2026 · © 2026 University of Rochester. All rights reserved.</span><span>Estimates only; not a substitute for clinical judgment.</span><span><a href="terms.html" style="color:inherit">Terms of Use</a></span></footer>
 </div>
 
 <script>
@@ -599,6 +631,15 @@ function makeModel(M){
 if(typeof module!=='undefined') module.exports={makeModel};
 
 const model = makeModel(M);
+// v1.2: overdiagnosis share, lead-time method of the CAP analysis (Brentnall 2026). E(t) = chance a screen-detected
+// cancer would not yet have presented clinically t years later; overdiagnosed if he dies first or it has not presented by 15 y.
+const ODX={K:[[0,1],[3,1],[5,0.8],[10,0.4],[15,0.117]],H:15,capMedian:8.75}; // median lead time of the CAP curve (E = 0.5)
+function odx(age,h,s){
+  const E0=t=>{ if(t>=ODX.H) return ODX.K[ODX.K.length-1][1]; for(let i=1;i<ODX.K.length;i++) if(t<=ODX.K[i][0]){ const [a,b]=ODX.K[i-1],[c,d]=ODX.K[i]; return b+(d-b)*(t-a)/(c-a); } };
+  const E=t=>E0(t/s); let o=E(ODX.H); const dt=0.05;
+  for(let t=0;t<ODX.H;t+=dt) o+=(E(t)-E(t+dt))*model.death(age,t+dt/2,h);
+  return o;
+}
 const $ = id => document.getElementById(id);
 const pct = (x,d=1) => (x*100).toFixed(d)+'%';
 const state = {age:72, psa:1.8};
@@ -668,6 +709,11 @@ function render(){
   $('lagN').textContent=o.lag;
   $('cLevel').className='level lv-'+r.cancerLevel; $('cLevel').textContent=r.cancerLevel==='low'?'At or below low-risk reference':'Above low-risk reference';
   $('xref').innerHTML=(r.c85[0]/o.anchor).toFixed(2)+'× <small>the reference</small>';
+  { const Y=+$('odLead').value||9, od=odx(state.age,t,Y/ODX.capMedian), pc=v=>Math.round(v*100);
+    $('odPanel').hidden=psaOut;
+    $('odLeadV').textContent=Y+' years';
+    $('odBig').innerHTML=pc(od)+'% <small>overdiagnosed at a lead time of '+Y+' years</small>';
+    $('odIn10').textContent='about '+Math.max(1,Math.round(od*10))+' in 10'; }
   const kf=[];
   const hm=model.evaluate(state.age,Math.min(ePsa(),3.99),kf,o);
   gauge('leGauge',0,25,r.le,hm.le,o.leMin,'y',v=>v.toFixed(0)+(v===25?'+ y':''),`threshold ${o.leMin} y`,psaOut,[0,5,15,20,25]);
@@ -721,6 +767,7 @@ function ePsa(){ return state.psa*($('k_5ari').checked?2:1); }
 function setAge(v){ v=Math.min(84.9,Math.max(65,+v||72)); state.age=v; $('age').value=v; $('ageR').value=v; render(); }
 function setPsa(v){ v=Math.max(0,+v); if(isNaN(v)) v=1.8; state.psa=v; $('psa').value=v; $('psaR').value=Math.min(v,3.99); render(); }
 $('ageR').addEventListener('input',e=>setAge(e.target.value));
+$('odLead').addEventListener('input',()=>render());
 $('age').addEventListener('change',e=>setAge(e.target.value));
 $('psaR').addEventListener('input',e=>setPsa(e.target.value));
 $('psa').addEventListener('change',e=>setPsa(e.target.value));
