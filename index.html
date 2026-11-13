@@ -146,8 +146,36 @@ sup.r{font-size:11px;color:var(--accent)}
 .mdet[open] .mhint::after{content:" \25B4"}
 .mdet[open]>summary{margin-bottom:14px}
 footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
+/* terms gate (clickwrap) */
+.gate{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(17,21,28,.55);backdrop-filter:blur(3px)}
+.gate[hidden]{display:none!important}
+.gate-card{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;max-width:560px;width:100%;max-height:calc(100vh - 32px);overflow:auto;padding:22px 22px 18px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.gate-card h2{font-family:var(--f-display);font-weight:650;font-size:22px;margin:0 0 4px}
+.gate-card .gsub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+.gate-card ul{margin:0 0 16px;padding-left:20px;display:grid;gap:7px;font-size:14.5px}
+.gate-check{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-radius:8px;padding:11px 12px;font-size:14.5px;cursor:pointer}
+.gate-check input{margin-top:3px;width:17px;height:17px;flex:none;accent-color:var(--accent)}
+.gate-card a{color:var(--accent)}
+.gate-actions{display:flex;justify-content:flex-end;margin-top:14px}
+.gate-btn{font:600 15px var(--f-body);background:var(--accent);color:var(--panel);border:0;border-radius:8px;padding:10px 18px;cursor:pointer}
+.gate-btn:disabled{opacity:.4;cursor:not-allowed}
 </style>
 
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle" hidden>
+  <div class="gate-card">
+    <h2 id="gateTitle">Before you use this tool</h2>
+    <p class="gsub">PSA Screening Decision Tool · © 2026 University of Rochester</p>
+    <ul>
+      <li><b>Research use only.</b> The tool has not been validated in individual patient data.</li>
+      <li><b>Not medical advice.</b> Results are population-based estimates that may not apply to a given patient. They support, and do not replace, clinical judgment and shared decision-making.</li>
+      <li><b>For health care professionals and researchers.</b> Patients should discuss screening decisions with their own clinician.</li>
+      <li><b>No patient identifiers.</b> Do not enter names, dates of birth, record numbers or other identifying information.</li>
+      <li>The tool is provided "as is", without warranty, and the University of Rochester and the developers accept no liability for decisions based on it.</li>
+    </ul>
+    <label class="gate-check"><input type="checkbox" id="gateAgree"><span>I have read and agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Use</a>, and I understand that this tool is for research use only and is not medical advice.</span></label>
+    <div class="gate-actions"><button type="button" class="gate-btn" id="gateGo" disabled>Continue to the tool</button></div>
+  </div>
+</div>
 <div class="wrap">
   <header class="mast">
     <div class="mast-top">
@@ -292,10 +320,10 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
         <h3 id="m-rule">Decision rule</h3>
         <p>Guidelines tie stopping screening to age (USPSTF: 70) or to life expectancy. The tool estimates the two quantities that age stands in for and applies two tests.</p>
         <ul>
-          <li><b>Life expectancy.</b> Consider stopping if estimated life expectancy is below 15 years. The European Association of Urology gives a strong recommendation that men with less than 15 years are unlikely to benefit from early diagnosis<sup class="r">1</sup>. The threshold can be lowered to 10 years, the American Cancer Society and NCCN position<sup class="r">2</sup>. The current AUA/SUO guideline lists life expectancy as one factor in shared decision-making without a numeric threshold<sup class="r">3</sup>.</li>
+          <li><b>Life expectancy.</b> Consider stopping if estimated life expectancy is below 15 years. The European Association of Urology gives a strong recommendation that men with less than 15 years are unlikely to benefit from early diagnosis<sup class="r">1</sup>. The threshold can be lowered to 10 years, the American Cancer Society (2026) and NCCN position<sup class="r">2</sup>; the American Cancer Society also recommends against screening at 75 and older except in very healthy men aged 75 to 79, and against screening at 80 and older. The current AUA/SUO guideline lists life expectancy as one factor in shared decision-making without a numeric threshold<sup class="r">3</sup>.</li>
           <li><b>Metastatic cancer risk.</b> Consider stopping if his lifetime risk of metastatic prostate cancer after a 4-year lag is no higher than that of a low-risk reference man: a 60-year-old with PSA below 1 ng/mL, the group the Malmö cohort identified as able to stop or test rarely<sup class="r">4</sup>. The reference man is given the patient's own comorbidity, so the comparison reflects cancer risk at equal health; life expectancy is judged by the first test alone.</li>
         </ul>
-        <p>A result is marked borderline when the deciding criterion is within the model's uncertainty: a patient-to-reference ratio within a factor of 1.37 either way (the median 95% uncertainty from 1,000 simulations varying every measured input), or life expectancy within 1.5 years of the threshold. A borderline result is shown as "Consider a longer interval": repeat PSA every 2 to 4 years rather than stopping or continuing at the usual interval, an option the AUA/SUO guideline allows (Statement 7)<sup class="r">3</sup>. The text still says which way the model leans.</p>
+        <p>A result is marked borderline when the deciding criterion is within the model's uncertainty: a patient-to-reference ratio within a factor of 1.37 either way (the median 95% uncertainty from 1,000 simulations varying every measured input), or life expectancy within 1.5 years of the threshold. A borderline result shows the way the model leans, marked with an asterisk ("Continue screening*" or "Consider stopping*"), with a note that either choice is reasonable and should be made with the patient.</p>
         <p>Otherwise the result is to continue screening.</p>
         <p>The result can depart from guideline defaults, and the page says so when it does. For men 70 and older told to continue, it notes that the USPSTF recommends against screening at that age (grade D)<sup class="r">13</sup> while the AUA/SUO guideline allows an individualized decision (Statement 7)<sup class="r">3</sup>. For men under 70 told they can stop, it notes that the AUA/SUO guideline recommends offering screening every 2 to 4 years at ages 50 to 69 (Statement 6) and the USPSTF calls screening an individual decision (grade C). When Black race or family history is ticked and the result is to stop, it notes that these are higher-risk groups in the AUA/SUO guideline (Statement 5).</p>
 
@@ -368,7 +396,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
         <h3 id="m-ref">References</h3>
         <ol class="refs">
           <li>EAU Guidelines on Prostate Cancer, 2026. Diagnostic evaluation, section 5.2.8.</li>
-          <li>Wolf AM, Wender RC, Etzioni RB, et al. American Cancer Society guideline for the early detection of prostate cancer: update 2010. CA Cancer J Clin. 2010;60(2):70–98.</li>
+          <li>Hoffman RM, et al. American Cancer Society guideline for the early detection of prostate cancer, 2026. CA Cancer J Clin. 2026. doi:10.3322/caac.70112.</li>
           <li>Lin DW, Carlsson S, Filson CP, et al. AUA/SUO guideline on early detection of prostate cancer (2023, amended 2026). J Urol. 2026. doi:10.1097/JU.0000000000004995.</li>
           <li>Vickers AJ, et al. BMJ. 2010;341:c4521 (Malmö Preventive Project).</li>
           <li>US Social Security Administration. 2023 period life table, men.</li>
@@ -386,7 +414,7 @@ footer{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
     </details>
   </section>
 
-  <footer><span>PSA Screening Decision Tool · version 1.1 · November 2026 · © 2026 University of Rochester. All rights reserved.</span><span>Estimates only; not a substitute for clinical judgment.</span></footer>
+  <footer><span>PSA Screening Decision Tool · version 1.1 · November 2026 · © 2026 University of Rochester. All rights reserved.</span><span>Estimates only; not a substitute for clinical judgment.</span><span><a href="terms.html" style="color:inherit">Terms of Use</a></span></footer>
 </div>
 
 <script>
@@ -617,11 +645,14 @@ function render(){
   const v=$('verdict');
   if(psaOut){ v.className='verdict v-out'; $('vPill').textContent='Outside range'; $('vWhy').textContent='Evaluate the elevated PSA according to guidelines.'; }
   else { const ph=[]; if(r.band.indexOf('cancer')>=0) ph.push("within the model's uncertainty of the comparison"); if(r.band.indexOf('life')>=0) ph.push('within '+((o.margin&&o.margin.leBand)||1.5)+' years of the life-expectancy threshold');
-    const band=ph.length?' However, this result is '+ph.join(' and ')+'. Because the call is close, testing less often (every 2 to 4 years) is a reasonable middle course; the model leans toward '+(r.cat==='stop'?'stopping':'continuing')+'.':'';
-    v.className='verdict v-'+r.cat+(r.border?' v-border':''); $('vPill').textContent=r.border?'Consider a longer interval':catText[r.cat];
+    const band=ph.length?' *Close call: this result is '+ph.join(' and ')+', so either continuing or stopping is reasonable. Decide with the patient.':'';
+    v.className='verdict v-'+r.cat+(r.border?' v-border':''); $('vPill').textContent=catText[r.cat]+(r.border?'*':'');
     $('vWhy').textContent=why(r,o)+band+(r.condHR>6?' Several serious conditions are combined; their hazard ratios multiply, so this estimate is less certain.':''); }
   // v1.1: say when the result departs from guideline defaults
   { const g=[]; const kr=['k_fh','k_blk'].filter(id=>$(id)&&$(id).checked);
+    if(!psaOut&&r.cat==='continue'&&state.age>=80) g.push('The American Cancer Society (2026) recommends against PSA screening in men 80 and older.');
+    else if(!psaOut&&r.cat==='continue'&&state.age>=75) g.push('The American Cancer Society (2026) recommends against PSA screening at 75 and older, except that very healthy men aged 75 to 79 may continue, especially if PSA has been rising.');
+    else if(!psaOut&&r.cat==='continue'&&state.age>=70) g.push('The American Cancer Society (2026) recommends an individual decision at 70 to 74.');
     if(!psaOut&&r.cat==='continue'&&state.age>=70) g.push('Guidelines differ for men 70 and older: the USPSTF recommends against PSA screening at this age (grade D, 2018; an update is in progress), while the AUA/SUO guideline allows clinicians to continue, lengthen the interval or stop based on PSA, risk, life expectancy and patient preference (Statement 7).');
     if(!psaOut&&r.cat==='stop'&&state.age<70) g.push('Below age 70 the AUA/SUO guideline recommends offering screening every 2 to 4 years (Statement 6, strong recommendation) and the USPSTF calls it an individual decision (grade C). The AUA/SUO guideline allows stopping or a longer interval based on PSA, risk and life expectancy (Statement 7), so this should be a shared decision.');
     if(!psaOut&&r.cat==='stop'&&kr.length) g.push('Black race and family history are higher-risk groups in the AUA/SUO guideline (Statement 5). Their effect is included in this estimate, but a strong family history (several relatives, or diagnosis at a young age) is not captured.');
@@ -711,5 +742,39 @@ new MutationObserver(render).observe(document.documentElement,{attributes:true,a
 $('age').value=state.age; $('ageR').value=state.age; $('psa').value=state.psa; $('psaR').value=state.psa;
 render();
 </script>
+
+<!-- Terms gate: the tool stays blocked until the user ticks the agreement. Acceptance is remembered in this browser
+     for TERMS_VERSION; change the version when the Terms change so everyone is asked again. -->
+<script>
+(function(){
+  const TERMS_VERSION='2026-11-13', KEY='psa-ss-terms-accepted';
+  const gate=document.getElementById('gate'), box=document.getElementById('gateAgree'), go=document.getElementById('gateGo'), wrap=document.querySelector('.wrap');
+  let ok=false; try{ ok=localStorage.getItem(KEY)===TERMS_VERSION; }catch(e){}
+  if(ok) return;
+  gate.hidden=false; wrap.inert=true; wrap.setAttribute('aria-hidden','true'); document.body.style.overflow='hidden';
+  setTimeout(()=>box.focus(),0);
+  box.addEventListener('change',()=>{ go.disabled=!box.checked; });
+  go.addEventListener('click',()=>{
+    if(!box.checked) return;
+    try{ localStorage.setItem(KEY,TERMS_VERSION); }catch(e){}
+    gate.hidden=true; wrap.inert=false; wrap.removeAttribute('aria-hidden'); document.body.style.overflow='';
+    if(window.goatcounter&&window.goatcounter.count) window.goatcounter.count({path:'terms-accepted',title:'Terms accepted',event:true});
+  });
+})();
+</script>
+
+<!-- Anonymous, cookie-free usage counts (GoatCounter). Counts page views plus one "calculator-used" event per visit.
+     Never send entered values (age, PSA, conditions) to analytics. Site: jwin2345.goatcounter.com. -->
+<script>
+(function(){
+  let sent=false;
+  function used(){
+    if(sent) return;
+    if(window.goatcounter && window.goatcounter.count){ sent=true; window.goatcounter.count({path:'calculator-used', title:'Calculator used', event:true}); }
+  }
+  ['input','change','click'].forEach(ev=>document.querySelector('.wrap').addEventListener(ev,e=>{ if(e.target.closest('input,select,button')) used(); },true));
+})();
+</script>
+<script data-goatcounter="https://jwin2345.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 
 </body></html>
